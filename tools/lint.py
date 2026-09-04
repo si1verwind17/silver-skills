@@ -16,17 +16,20 @@ if not mp.exists():
 else:
     plugins = json.loads(mp.read_text()).get("plugins", [])
 
+seen_skills = set()
 for entry in plugins:
     pdir = (ROOT / entry["source"]).resolve()
-    manifest = pdir / ".claude-plugin" / "plugin.json"
-    if not manifest.exists():
-        err(f"{entry['name']}: missing {manifest.relative_to(ROOT)}")
-        continue
-    spec = json.loads(manifest.read_text())
-    if spec.get("name") != entry["name"]:
-        err(f"{entry['name']}: plugin.json name {spec.get('name')!r} differs from marketplace entry")
-    for rel in spec.get("skills", []):
+    skills = entry.get("skills")
+    if not skills:
+        manifest = pdir / ".claude-plugin" / "plugin.json"
+        if not manifest.exists():
+            err(f"{entry['name']}: no inline skills and no plugin.json"); continue
+        skills = json.loads(manifest.read_text()).get("skills", [])
+    if entry.get("skills") and entry.get("strict", True):
+        err(f"{entry['name']}: inline skills need strict: false")
+    for rel in skills:
         sdir = (pdir / rel).resolve()
+        seen_skills.add(sdir)
         skill_md = sdir / "SKILL.md"
         if not skill_md.exists():
             err(f"{entry['name']}: skill {rel} has no SKILL.md")
@@ -43,10 +46,12 @@ for entry in plugins:
                 fields[key] = "" if val in (">-", ">", "|", "|-") else val
             elif key and line.startswith("  "):
                 fields[key] = (fields[key] + " " + line.strip()).strip()
-        if set(fields) - {"name", "description"}:
-            err(f"{rel}: frontmatter has extra keys {sorted(set(fields) - {'name', 'description'})}")
+        if set(fields) - {"name", "description", "license"}:
+            err(f"{rel}: frontmatter has extra keys {sorted(set(fields) - {'name', 'description', 'license'})}")
         if fields.get("name") != sdir.name:
             err(f"{rel}: name {fields.get('name')!r} != directory {sdir.name!r}")
+        if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", sdir.name):
+            err(f"{rel}: directory name must be lowercase-hyphen")
         desc = fields.get("description", "")
         if not desc.startswith("Use when"):
             err(f"{rel}: description must start with 'Use when'")
@@ -58,7 +63,12 @@ for entry in plugins:
         if (sdir / "eval.md").exists():
             err(f"{rel}: eval.md must not be published")
 
+# every skills/*/SKILL.md must belong to some plugin, or an installer ships it unlisted
+for skill_md in sorted((ROOT / "skills").glob("*/SKILL.md")) if (ROOT / "skills").is_dir() else []:
+    if skill_md.parent.resolve() not in seen_skills:
+        err(f"skills/{skill_md.parent.name}: present in skills/ but in no plugin entry")
+
 if errors:
     print("\n".join(f"LINT: {e}" for e in errors)); print(f"\n{len(errors)} problem(s).")
     sys.exit(1)
-print(f"lint clean ({sum(len(json.loads((ROOT / e['source'] / '.claude-plugin' / 'plugin.json').read_text())['skills']) for e in plugins)} skills, {len(plugins)} plugins).")
+print(f"lint clean ({len(seen_skills)} skills, {len(plugins)} plugins).")

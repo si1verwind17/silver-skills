@@ -1,0 +1,13 @@
+# Build output
+build/
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Node, used only to generate the design review page. The manifests ARE tracked
+# so build-review.mjs stays reproducible from a fresh clone; only the installed
+# tree is ignored.
+node_modules/
+
+# Rendered diagrams are inlined into design-review.html, never committed loose
+*.svg
+.DS_Store

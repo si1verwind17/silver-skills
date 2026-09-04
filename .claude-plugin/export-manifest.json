@@ -1,0 +1,31 @@
+{
+  "exported_from": "795153c",
+  "exported_on": "2026-09-05",
+  "marketplace_version": "1.0.0",
+  "plugins": {
+    "aspect-code-review": {
+      "version": "1.0.0",
+      "skills": [
+        "reviewing-code-by-aspect",
+        "documenting-domain-context"
+      ]
+    },
+    "backend-development": {
+      "version": "1.0.0",
+      "skills": [
+        "writing-business-requirements",
+        "building-backend-services",
+        "backend-design-by-data",
+        "backend-architecture",
+        "backend-stack-selection",
+        "backend-code-conventions",
+        "rendering-design-docs"
+      ]
+    }
+  },
+  "examples": {
+    "booking-service": {
+      "source_commit": "ef01d06"
+    }
+  }
+}

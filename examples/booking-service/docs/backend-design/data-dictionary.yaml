@@ -1,0 +1,1053 @@
+# Booking service — data dictionary.
+#
+# GENERATED from the live schema's COMMENT ON metadata, so it agrees with ddl/
+# column-for-column by construction.  Edit the COMMENT ON statements in
+# ddl/01-create-tables.sql and regenerate; do not hand-edit this file.
+#
+# Source: docs/backend-design/data-design.md (design rationale)
+#         docs/backend-design/requirements.md r5 (requirement ids)
+
+tables:
+  actor_type:
+    description: |-
+      Who caused a transition: CUSTOMER, PROVIDER or SYSTEM (R23).
+    columns:
+      actor_type_id:
+        type: smallint
+        nullable: false
+        description: |-
+          Stable seeded identifier.
+      code:
+        type: text
+        nullable: false
+        description: |-
+          Uppercase actor kind: CUSTOMER, PROVIDER, SYSTEM.
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time.
+
+  availability_exception:
+    description: |-
+      A one-off override of the recurring rules for a resource (UC3). BLOCK removes
+      availability and beats both rules and OPEN; OPEN adds availability where no rule
+      covers.
+    columns:
+      availability_exception_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Internal surrogate key.
+      public_ref:
+        type: uuid
+        nullable: false
+        description: |-
+          Non-enumerable identifier used in the API. UUIDv7.
+      resource_id:
+        type: bigint
+        nullable: false
+        description: |-
+          The resource this exception applies to.
+      availability_exception_type_id:
+        type: smallint
+        nullable: false
+        description: |-
+          BLOCK or OPEN.
+      starts_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Absolute start instant. Unlike availability_rule, exceptions are stored as
+          absolute instants, not wall-clock times, because they name a concrete occasion
+          (R14).
+      ends_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Absolute end instant, exclusive. Strictly later than starts_at.
+      reason:
+        type: text
+        nullable: true
+        description: |-
+          Free-text note shown to the provider, e.g. "public holiday". Not interpreted by
+          the service.
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time.
+      updated_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Last modification time, supplied by the backend.
+
+  availability_exception_type:
+    description: |-
+      One-off availability override kinds (UC3): BLOCK removes availability and wins over
+      everything; OPEN adds it.
+    columns:
+      availability_exception_type_id:
+        type: smallint
+        nullable: false
+        description: |-
+          Stable seeded identifier.
+      code:
+        type: text
+        nullable: false
+        description: |-
+          Uppercase kind: BLOCK, OPEN.
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time.
+
+  availability_rule:
+    description: |-
+      A repeating weekly window during which a resource is bookable (UC2, LD5). A resource's
+      published schedule is the union of its rules in effect on a given date, minus BLOCK
+      exceptions.
+    columns:
+      availability_rule_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Internal surrogate key.
+      public_ref:
+        type: uuid
+        nullable: false
+        description: |-
+          Non-enumerable identifier used in the API. UUIDv7.
+      resource_id:
+        type: bigint
+        nullable: false
+        description: |-
+          The resource this rule publishes availability for.
+      day_of_week:
+        type: smallint
+        nullable: false
+        description: |-
+          ISO-style day index in the provider timezone, 0 = Sunday through 6 = Saturday,
+          matching PostgreSQL EXTRACT(DOW).
+      start_time:
+        type: time without time zone
+        nullable: false
+        description: |-
+          Window start as a wall-clock local time in the provider timezone, e.g. 09:00.
+          Expanded per date against provider.timezone so DST is handled correctly (R14).
+      end_time:
+        type: time without time zone
+        nullable: false
+        description: |-
+          Window end as a wall-clock local time in the provider timezone. Must be strictly
+          later than start_time: windows never cross midnight, a provider needing overnight
+          hours writes two rules (see OQ4).
+      effective_from:
+        type: date
+        nullable: false
+        description: |-
+          First calendar date, in the provider timezone, on which this rule produces
+          availability.
+      effective_until:
+        type: date
+        nullable: true
+        description: |-
+          Last calendar date on which it produces availability; NULL means open-ended.
+          Setting it is how a rule is ENDED (requirements 4.2); rules are never hard-deleted
+          (R20).
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time.
+      updated_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Last modification time, supplied by the backend.
+
+  booking:
+    description: |-
+      One customer's claim on one unit of a session's capacity (LD15). Its lifecycle is
+      requirements section 4.1; every state change is written by fn_transition_booking and
+      recorded in booking_transition.
+    columns:
+      booking_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Internal surrogate key.
+      public_ref:
+        type: uuid
+        nullable: false
+        description: |-
+          Non-enumerable identifier used in the API and in published events. UUIDv7 — time-
+          ordered so inserts stay local in the index, unlike a v4.
+      customer_id:
+        type: bigint
+        nullable: false
+        description: |-
+          The customer holding the booking. Scopes read and write access under R18.
+      session_id:
+        type: bigint
+        nullable: false
+        description: |-
+          The session whose capacity this booking occupies. A reschedule repoints this
+          column (R9) and keeps booking_id, which is why identity survives a move (R8 of
+          UC8).
+      provider_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Owning provider, copied from the session. Denormalised so every tenant-scoped
+          query filters without joining session and resource; maintained only by the booking
+          functions.
+      booking_state_id:
+        type: smallint
+        nullable: false
+        description: |-
+          Current lifecycle state. Whether it holds capacity or is terminal is read from
+          booking_state, never hard-coded.
+      hold_reason_id:
+        type: smallint
+        nullable: true
+        description: |-
+          While HELD, the single external gate awaited (LD16). NULL in every other state.
+          Today only AWAITING_PROVIDER_APPROVAL occurs.
+      hold_deadline:
+        type: timestamp with time zone
+        nullable: true
+        description: |-
+          When the hold lapses: min(gate TTL from now, starts_at) per R8. NULL unless HELD.
+          The expiry job of UC11 reads this column.
+      starts_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Copy of session.starts_at, denormalised so the customer timeline, the
+          cancellation-window test (R6) and the auto-complete sweep (UC12) need no join.
+          Repointed together with session_id on reschedule.
+      ends_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Copy of session.ends_at, denormalised for the same reason. Attendance may only be
+          marked after this instant (R12).
+      created_by_actor_type_id:
+        type: smallint
+        nullable: false
+        description: |-
+          CUSTOMER or PROVIDER. Decides whether the minimum lead time of R4 applied: a
+          provider-initiated booking bypasses it.
+      idempotency_key:
+        type: text
+        nullable: true
+        description: |-
+          Caller-supplied key making creation idempotent per customer (R15). Unique per
+          customer where present; NULL for bookings created without one.
+      reschedule_count:
+        type: integer
+        nullable: false
+        description: |-
+          How many times this booking has moved (UC8). Recorded so a limit can be introduced
+          later without a schema change (PD5).
+      cancelled_by_actor_type_id:
+        type: smallint
+        nullable: true
+        description: |-
+          Who cancelled, once cancelled (R7). NULL otherwise.
+      cancellation_reason:
+        type: text
+        nullable: true
+        description: |-
+          Free-text reason, mandatory for a provider cancellation (R7). NULL otherwise.
+      completion_source_id:
+        type: smallint
+        nullable: true
+        description: |-
+          PROVIDER when attendance was marked by a person, SYSTEM when auto-completed (R13,
+          UC12). NULL until the booking completes.
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time.
+      updated_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Last modification time, supplied by the backend.
+
+  booking_state:
+    description: |-
+      The booking lifecycle states of requirements r4 section 4.1. Seeded, never written at
+      runtime.
+    columns:
+      booking_state_id:
+        type: smallint
+        nullable: false
+        description: |-
+          Stable seeded identifier; values are fixed by 04-seed-lookups.sql and must never
+          be renumbered.
+      code:
+        type: text
+        nullable: false
+        description: |-
+          Uppercase state name as it appears in requirements section 4.1 and in published
+          events, e.g. HELD, CONFIRMED, NO_SHOW.
+      is_terminal:
+        type: boolean
+        nullable: false
+        description: |-
+          True when no transition may leave this state (R28 forbidden transitions). Read by
+          fn_transition_booking rather than hard-coded.
+      holds_capacity:
+        type: boolean
+        nullable: false
+        description: |-
+          True when a booking in this state occupies a unit of its session capacity (R1).
+          True for HELD and CONFIRMED only.
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time.
+
+  booking_transition:
+    description: |-
+      Append-only history of every booking state change (R23). Never updated, never deleted.
+      Its sequence_no is the per-booking ordering key consumers use to order events (R29).
+    columns:
+      booking_transition_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Internal surrogate key.
+      booking_id:
+        type: bigint
+        nullable: false
+        description: |-
+          The booking that moved.
+      sequence_no:
+        type: integer
+        nullable: false
+        description: |-
+          Position in this booking's history, starting at 1 for creation and incrementing by
+          1. Published in the event so a consumer can order and dedupe (R29).
+      session_id:
+        type: bigint
+        nullable: false
+        description: |-
+          The session the booking occupied at this point in its history. Without it a
+          reschedule would erase the previous time entirely, leaving R23's history
+          incomplete and making BookingRescheduled unable to report what the booking moved
+          from.
+      from_state_id:
+        type: smallint
+        nullable: true
+        description: |-
+          State left. NULL on the creation transition, which has no predecessor.
+      to_state_id:
+        type: smallint
+        nullable: false
+        description: |-
+          State entered.
+      actor_type_id:
+        type: smallint
+        nullable: false
+        description: |-
+          CUSTOMER, PROVIDER or SYSTEM.
+      actor_subject:
+        type: text
+        nullable: true
+        description: |-
+          IdP subject of the person responsible, verbatim from the verified token. NULL when
+          actor_type is SYSTEM.
+      reason:
+        type: text
+        nullable: true
+        description: |-
+          Free-text justification where one applies, e.g. a provider cancellation reason
+          (R7). NULL otherwise.
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          When the transition committed. This table is insert-only, so it carries no
+          updated_at.
+
+  booking_transition_rule:
+    description: |-
+      The permitted transitions of requirements section 4.1, as data. fn_transition_booking
+      admits a move only if a row here matches, so the forbidden-transition list is enforced
+      by the seed rather than by branches in code, and is testable by querying the table.
+    columns:
+      from_state_id:
+        type: smallint
+        nullable: true
+        description: |-
+          State being left. NULL means the creation transition, which has no predecessor.
+      to_state_id:
+        type: smallint
+        nullable: false
+        description: |-
+          State being entered.
+      actor_type_id:
+        type: smallint
+        nullable: false
+        description: |-
+          Which actor may perform this move. The same from/to pair may be legal for one
+          actor and forbidden for another, e.g. only SYSTEM may expire a hold.
+      requires_gate:
+        type: boolean
+        nullable: false
+        description: |-
+          True when the move is a gate resolution and the caller must therefore present a
+          matching hold_reason_id (R28).
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time.
+
+  completion_source:
+    description: |-
+      Distinguishes a provider marking attendance from the system auto-completing a stale
+      booking (UC12, R13).
+    columns:
+      completion_source_id:
+        type: smallint
+        nullable: false
+        description: |-
+          Stable seeded identifier.
+      code:
+        type: text
+        nullable: false
+        description: |-
+          Uppercase source: PROVIDER, SYSTEM.
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time.
+
+  confirmation_mode:
+    description: |-
+      Provider confirmation modes (LD2): INSTANT or APPROVAL. One input to the gate policy
+      of R33, not itself the gate decision.
+    columns:
+      confirmation_mode_id:
+        type: smallint
+        nullable: false
+        description: |-
+          Stable seeded identifier.
+      code:
+        type: text
+        nullable: false
+        description: |-
+          Uppercase mode name: INSTANT, APPROVAL.
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time.
+
+  customer:
+    description: |-
+      A booking end user, keyed to an external IdP subject (LD3). Holds PII; see NF5 and
+      OQ10 for the erasure approach.
+    columns:
+      customer_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Internal surrogate key.
+      public_ref:
+        type: uuid
+        nullable: false
+        description: |-
+          Non-enumerable identifier used in the API and in published events. UUIDv7. This is
+          the only customer identifier that ever appears in an event payload (PD17).
+      idp_subject:
+        type: text
+        nullable: false
+        description: |-
+          The external IdP subject identifier, taken verbatim from the verified token sub
+          claim (R17). Never a credential.
+      display_name:
+        type: text
+        nullable: true
+        description: |-
+          PII. Name as supplied by the customer. NULL once erased.
+      email:
+        type: text
+        nullable: true
+        description: |-
+          PII. Contact email, resolved by consuming services on demand rather than shipped
+          in events (PD17). NULL once erased.
+      phone:
+        type: text
+        nullable: true
+        description: |-
+          PII. Contact phone in E.164 form, e.g. +4915112345678. NULL once erased.
+      erased_at:
+        type: timestamp with time zone
+        nullable: true
+        description: |-
+          When the PII columns were cleared under an erasure request (NF5). NULL while the
+          profile is intact; booking history survives erasure.
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time.
+      updated_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Last modification time, supplied by the backend.
+
+  event_type:
+    description: |-
+      The kinds of message this service publishes (UC13). Seeded here from requirements
+      section 4.1; the phase-2 event catalogue is the authority on payload shape and owns
+      any additions.
+    columns:
+      event_type_id:
+        type: smallint
+        nullable: false
+        description: |-
+          Stable seeded identifier.
+      code:
+        type: text
+        nullable: false
+        description: |-
+          Event name as published, e.g. BookingConfirmed, BookingGateResolutionRejected.
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time.
+
+  hold_reason:
+    description: |-
+      The external gates a HELD booking may await (LD16). Adding a gate — e.g.
+      AWAITING_PAYMENT — is an INSERT here, never a schema or state-machine change.
+    columns:
+      hold_reason_id:
+        type: smallint
+        nullable: false
+        description: |-
+          Stable seeded identifier.
+      code:
+        type: text
+        nullable: false
+        description: |-
+          Uppercase gate name, e.g. AWAITING_PROVIDER_APPROVAL.
+      default_ttl_minutes:
+        type: integer
+        nullable: false
+        description: |-
+          Gate-level hold TTL in minutes (R8). Per-gate by design;
+          provider.approval_hold_ttl_minutes overrides this for the approval gate only.
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time.
+
+  inbox_message:
+    description: |-
+      Deduplication record for messages consumed from the broker — today only gate
+      resolutions (UC14). The unique message_id is what makes a redelivered message a no-op
+      (R29), inserted in the same transaction as the effect it causes.
+    columns:
+      inbox_message_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Internal surrogate key.
+      message_id:
+        type: text
+        nullable: false
+        description: |-
+          The producer's unique message identifier, verbatim. A second delivery of the same
+          id conflicts here and is discarded without re-applying its effect.
+      message_type:
+        type: text
+        nullable: false
+        description: |-
+          Producer's message type name, recorded for operators; the consumer dispatches on
+          it.
+      payload:
+        type: jsonb
+        nullable: false
+        description: |-
+          The consumed message body as received, retained for diagnosis. Treated as
+          untrusted input.
+      processed_at:
+        type: timestamp with time zone
+        nullable: true
+        description: |-
+          When handling finished. NULL while in flight.
+      outcome:
+        type: text
+        nullable: true
+        description: |-
+          What handling decided, e.g. APPLIED or REJECTED_STATE_MISMATCH for a late gate
+          resolution (R28). NULL until processed.
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          When the message was accepted for handling.
+      updated_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Last modification time, supplied by the backend.
+
+  outbox_event:
+    description: |-
+      Transactional outbox (R22). A row is inserted in the same transaction as the state
+      change that caused it, so no committed transition can lack its event and no event can
+      survive a rollback. A separate dispatcher delivers rows to the broker asynchronously,
+      which is why a broker outage delays messages and never fails a booking. The composite
+      foreign key to booking_transition plus outbox_event_per_transition make "exactly one
+      event per transition" a database guarantee rather than a convention.
+    columns:
+      outbox_event_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Internal surrogate key, and the dispatch order within a booking.
+      event_id:
+        type: uuid
+        nullable: false
+        description: |-
+          Globally unique event identifier published to consumers for deduplication (R29).
+          Any UUID version: application-minted events use v7, the database sweeps use v4,
+          and neither matters because event ORDER is carried by transition_sequence_no,
+          never by this id.
+      event_type_id:
+        type: smallint
+        nullable: false
+        description: |-
+          Which event this is.
+      booking_id:
+        type: bigint
+        nullable: false
+        description: |-
+          The booking the event concerns. Also the partition key consumers order by (R29).
+      transition_sequence_no:
+        type: integer
+        nullable: true
+        description: |-
+          The booking_transition this event reports, giving one event per transition. NULL
+          for events that report no state change — today only BookingGateResolutionRejected
+          (R28), which fires precisely because nothing changed. NULL rows are exempt from
+          both the unique constraint and the foreign key, so a booking may accumulate
+          several rejections.
+      schema_version:
+        type: integer
+        nullable: false
+        description: |-
+          Version of the payload shape for this event type (R29). Incremented when a payload
+          changes incompatibly.
+      payload:
+        type: jsonb
+        nullable: false
+        description: |-
+          The published message body as JSON. JSONB rather than columns because the shape is
+          owned by the event contract and varies per event type; it carries public_ref
+          identifiers only and never PII (PD17, NF5).
+      dispatched_at:
+        type: timestamp with time zone
+        nullable: true
+        description: |-
+          When the broker acknowledged the message. NULL while undelivered; the dispatcher
+          and the NF11 lag alert both key on this.
+      attempt_count:
+        type: integer
+        nullable: false
+        description: |-
+          Delivery attempts so far, used for backoff and for the repeated-failure alert of
+          NF11.
+      next_attempt_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Earliest instant the dispatcher may try again. Set forward on failure to implement
+          backoff.
+      last_error:
+        type: text
+        nullable: true
+        description: |-
+          Message from the most recent failed attempt, for operators. NULL if never failed.
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time, which is also the transition time.
+      updated_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Last modification time, moved by each dispatch attempt.
+
+  provider:
+    description: |-
+      A booking business (UC1). Owns resources, services and the booking policy values of
+      R4-R8, R13.
+    columns:
+      provider_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Internal surrogate key. Never exposed over the API.
+      public_ref:
+        type: uuid
+        nullable: false
+        description: |-
+          Non-enumerable identifier used in the API and in published events. UUIDv7,
+          generated by the application.
+      name:
+        type: text
+        nullable: false
+        description: |-
+          Business display name. Non-blank.
+      timezone:
+        type: text
+        nullable: false
+        description: |-
+          IANA timezone name exactly as it appears in pg_timezone_names, e.g. Europe/Berlin.
+          Availability rules are wall-clock in this zone (R14). The CHECK rejects any name
+          Postgres does not recognise.
+      confirmation_mode_id:
+        type: smallint
+        nullable: false
+        description: |-
+          INSTANT or APPROVAL (LD2). An input to the gate policy of R33, never read as the
+          gate decision itself.
+      min_lead_minutes:
+        type: integer
+        nullable: false
+        description: |-
+          Minimum notice for a CUSTOMER-initiated booking, in minutes (R4). Provider-
+          initiated bookings bypass this.
+      booking_horizon_days:
+        type: integer
+        nullable: false
+        description: |-
+          How far ahead a booking may start, in days (R5). Binds providers as well as
+          customers, because it also bounds availability expansion.
+      cancellation_window_minutes:
+        type: integer
+        nullable: false
+        description: |-
+          How long before start a customer may still cancel, in minutes (R6). After this
+          only the provider may cancel.
+      approval_hold_ttl_minutes:
+        type: integer
+        nullable: false
+        description: |-
+          Overrides hold_reason.default_ttl_minutes for the AWAITING_PROVIDER_APPROVAL gate
+          only (R8, PD3).
+      auto_complete_grace_days:
+        type: integer
+        nullable: false
+        description: |-
+          Days after a booking ends before the system auto-completes it (R13).
+      is_active:
+        type: boolean
+        nullable: false
+        description: |-
+          False hides the provider entirely: no availability, no new bookings. Existing
+          bookings are unaffected.
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time.
+      updated_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Last modification time, supplied by the backend from its injected clock.
+
+  provider_admin:
+    description: |-
+      Grants an IdP subject admin rights over one provider (R18). Membership is resolved
+      here, not from a vendor token claim (PD1).
+    columns:
+      provider_admin_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Internal surrogate key.
+      provider_id:
+        type: bigint
+        nullable: false
+        description: |-
+          The provider this subject administers.
+      idp_subject:
+        type: text
+        nullable: false
+        description: |-
+          The external IdP subject identifier, taken verbatim from the verified token sub
+          claim (R17).
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time.
+
+  resource:
+    description: |-
+      A bookable staff member or room (LD6). The thing a session occupies; R1 is scoped per
+      resource.
+    columns:
+      resource_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Internal surrogate key.
+      public_ref:
+        type: uuid
+        nullable: false
+        description: |-
+          Non-enumerable identifier used in the API and in published events. UUIDv7.
+      provider_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Owning provider.
+      name:
+        type: text
+        nullable: false
+        description: |-
+          Display name of the staff member or room. Non-blank.
+      idp_subject:
+        type: text
+        nullable: true
+        description: |-
+          Optional IdP subject of the person this resource represents, granting them read
+          access to their own bookings only (R24). NULL for rooms and unlinked staff.
+      is_active:
+        type: boolean
+        nullable: false
+        description: |-
+          False yields no availability and accepts no new bookings; existing bookings
+          survive and must be resolved explicitly (requirements 4.2). Deactivation replaces
+          deletion (R19).
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time.
+      updated_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Last modification time, supplied by the backend.
+
+  service:
+    description: |-
+      A named offering with its own duration, capacity and buffers (LD7, LD17). Its values
+      are snapshotted onto a session at creation (R25).
+    columns:
+      service_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Internal surrogate key.
+      public_ref:
+        type: uuid
+        nullable: false
+        description: |-
+          Non-enumerable identifier used in the API and in published events. UUIDv7.
+      provider_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Owning provider.
+      name:
+        type: text
+        nullable: false
+        description: |-
+          Display name, e.g. "Haircut" or "Vinyasa flow". Non-blank.
+      duration_minutes:
+        type: integer
+        nullable: false
+        description: |-
+          Length of the booked time range in minutes, excluding buffers. Strictly positive.
+      capacity:
+        type: integer
+        nullable: false
+        description: |-
+          Maximum concurrent bookings within one session of this service (R2). 1 means a 1:1
+          appointment; higher means a group class.
+      buffer_before_minutes:
+        type: integer
+        nullable: false
+        description: |-
+          Minutes of resource time reserved immediately before the booked range, e.g. setup
+          (R31). Blocks other sessions; never itself bookable.
+      buffer_after_minutes:
+        type: integer
+        nullable: false
+        description: |-
+          Minutes of resource time reserved immediately after the booked range, e.g. cleanup
+          or travel (R31). Buffers of adjoining sessions SUM rather than overlap; see data-
+          design.md OQ1.
+      slot_step_minutes:
+        type: integer
+        nullable: false
+        description: |-
+          Granularity of the candidate start times offered by availability search (UC4), in
+          minutes. Starts are aligned to the beginning of each availability window, not to
+          the wall clock. See OQ2.
+      is_active:
+        type: boolean
+        nullable: false
+        description: |-
+          False yields no availability and accepts no new bookings; existing bookings
+          survive (requirements 4.2, R19).
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time.
+      updated_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Last modification time, supplied by the backend.
+
+  service_resource:
+    description: |-
+      Which resources may perform which service (UC1). The composite foreign keys carry
+      provider_id so the database itself rejects linking a service to another provider's
+      resource.
+    columns:
+      service_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Eligible service.
+      resource_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Resource able to perform it.
+      provider_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Owning provider, present solely so both composite foreign keys can enforce that
+          service and resource share it.
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time.
+
+  session:
+    description: |-
+      The unit a resource is actually occupied by: one (resource, service, start, end) tuple
+      holding up to capacity bookings (R1). session_no_overlap is the single mechanism
+      enforcing NF4, R1 and R31 — a resource hosts at most one occupied session at any
+      instant, buffers included. It is a GiST exclusion constraint, so the guarantee is held
+      by the index rather than by any application check. The WHERE (booked_count > 0)
+      predicate means an emptied session stops blocking its time; refilling it re-enters the
+      index and is re-checked against whatever took the space meanwhile.
+    columns:
+      session_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Internal surrogate key. Sessions are not addressed over the API; customers address
+          bookings.
+      provider_id:
+        type: bigint
+        nullable: false
+        description: |-
+          Owning provider. Present so the composite foreign keys can enforce that resource
+          and service belong to the same provider.
+      resource_id:
+        type: bigint
+        nullable: false
+        description: |-
+          The occupied resource. R1 is scoped per resource, so this is the equality column
+          of session_no_overlap.
+      service_id:
+        type: bigint
+        nullable: false
+        description: |-
+          The service being delivered. Two different services at the same instant on one
+          resource are two sessions, and therefore conflict.
+      starts_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Absolute start of the booked range, exclusive of buffer. This is the time a
+          customer sees and books.
+      ends_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Absolute end of the booked range, exclusive, equal to starts_at plus
+          duration_minutes. Exclusive of buffer.
+      duration_minutes:
+        type: integer
+        nullable: false
+        description: |-
+          Snapshot of service.duration_minutes when this session was created (R25). Later
+          edits to the service never alter an existing session.
+      capacity:
+        type: integer
+        nullable: false
+        description: |-
+          Snapshot of service.capacity (R25). The ceiling booked_count is checked against;
+          the session, not the current service row, is authoritative (see OQ5).
+      buffer_before_minutes:
+        type: integer
+        nullable: false
+        description: |-
+          Snapshot of service.buffer_before_minutes (R25, R31). Widens occupied_range
+          backwards.
+      buffer_after_minutes:
+        type: integer
+        nullable: false
+        description: |-
+          Snapshot of service.buffer_after_minutes (R25, R31). Widens occupied_range
+          forwards.
+      booked_count:
+        type: integer
+        nullable: false
+        description: |-
+          Number of bookings on this session in a capacity-holding state
+          (booking_state.holds_capacity). Maintained only by the functions in
+          03-functions.sql, never by direct DML; see the reconciliation query in data-
+          design.md.
+      occupied_range:
+        type: tstzrange
+        nullable: false
+        description: |-
+          [starts_at - buffer_before, ends_at + buffer_after), the span this session denies
+          to every other session on the resource. Maintained by trigger, not GENERATED:
+          "timestamptz + interval" is STABLE rather than IMMUTABLE, which Postgres refuses
+          in a generation expression.
+      created_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Row insertion time.
+      updated_at:
+        type: timestamp with time zone
+        nullable: false
+        description: |-
+          Last modification time, supplied by the backend.
+

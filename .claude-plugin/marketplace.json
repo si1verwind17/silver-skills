@@ -1,0 +1,63 @@
+{
+  "name": "silver",
+  "owner": {
+    "name": "si1verwind"
+  },
+  "metadata": {
+    "description": "Skills for scored code review and backend service development, written as plain Markdown any agent can follow.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "aspect-code-review",
+      "source": "./",
+      "strict": false,
+      "description": "Scored, documented code review by aspect with a persistent ledger, plus the owner-confirmed domain-context document the review reads first.",
+      "version": "1.0.0",
+      "author": {
+        "name": "si1verwind"
+      },
+      "license": "MIT",
+      "keywords": [
+        "code-review",
+        "audit",
+        "domain-context",
+        "ledger",
+        "severity"
+      ],
+      "category": "workflow",
+      "skills": [
+        "./skills/reviewing-code-by-aspect",
+        "./skills/documenting-domain-context"
+      ]
+    },
+    {
+      "name": "backend-development",
+      "source": "./",
+      "strict": false,
+      "description": "Requirements to implementation for backend services: business requirements, data design, architecture, stack selection, code conventions, and a human-readable design-review page, orchestrated end to end.",
+      "version": "1.0.0",
+      "author": {
+        "name": "si1verwind"
+      },
+      "license": "MIT",
+      "keywords": [
+        "backend",
+        "architecture",
+        "data-design",
+        "requirements",
+        "conventions"
+      ],
+      "category": "development",
+      "skills": [
+        "./skills/writing-business-requirements",
+        "./skills/building-backend-services",
+        "./skills/backend-design-by-data",
+        "./skills/backend-architecture",
+        "./skills/backend-stack-selection",
+        "./skills/backend-code-conventions",
+        "./skills/rendering-design-docs"
+      ]
+    }
+  ]
+}

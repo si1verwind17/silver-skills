@@ -1,0 +1,4 @@
+# Derived views of review.md — regenerate with the skill's render_review.mjs, never hand-edit.
+# Delete these lines if you deliberately want a view committed.
+*.html
+*.json

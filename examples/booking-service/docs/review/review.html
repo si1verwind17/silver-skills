@@ -1,0 +1,427 @@
+<!doctype html>
+<!-- generated from review.md on 2026-09-04 — do not edit; regenerate with render_review.mjs instead. Agents must consume the markdown, not this page. -->
+<html lang="en"><head>
+<meta name="source-sha256" content="66483e2c36c837b6821e174c65b8651c140108712be707a202c2b115208d3e97"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>booking-service — code review ledger</title>
+<style>
+:root { color-scheme: light;
+  --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e; --ink-muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --ring:rgba(11,11,11,.10); --code-bg:#f0efec; --accent:#2a78d6; }
+@media (prefers-color-scheme: dark) { :root:where(:not([data-theme="light"])) { color-scheme: dark;
+  --page:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink-2:#c3c2b7; --ink-muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10); --code-bg:#242423; --accent:#3987e5; } }
+:root[data-theme="dark"] { color-scheme: dark;
+  --page:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink-2:#c3c2b7; --ink-muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10); --code-bg:#242423; --accent:#3987e5; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--page); color:var(--ink);
+  font:15px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif; }
+.layout { max-width:1240px; margin:0 auto; padding:32px 20px; display:grid; grid-template-columns:230px minmax(0,1fr); gap:36px; }
+@media (max-width:1000px){ .layout{ grid-template-columns:minmax(0,1fr);} nav.toc{ position:static; max-height:none;} }
+nav.toc { position:sticky; top:24px; align-self:start; font-size:13.5px; max-height:calc(100vh - 48px); overflow:auto; }
+nav.toc a { display:block; color:var(--ink-2); text-decoration:none; padding:3px 10px; border-left:2px solid var(--grid); }
+nav.toc a:hover { color:var(--ink); border-left-color:var(--accent); }
+nav.toc .toc-title { font-weight:600; color:var(--ink); margin:0 0 6px; }
+header.page h1 { font-size:23px; margin:0 0 4px; }
+header.page .meta { color:var(--ink-muted); font-size:13px; }
+main section.card, .panel { background:var(--surface); border:1px solid var(--ring); border-radius:10px; padding:22px 26px; margin:18px 0; }
+h2 { font-size:19px; margin:26px 0 10px; } h3 { font-size:16.5px; margin:22px 0 8px; }
+h4.finding { font-size:14.5px; margin:20px 0 6px; font-weight:600; }
+h4.finding::before { content:""; }
+hr.aspect-rule { border:0; border-top:1px solid var(--grid); margin:26px 0 4px; }
+code { background:var(--code-bg); border-radius:4px; padding:1px 5px; font-size:.86em;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; overflow-wrap:anywhere; }
+a.xref { color:var(--accent); text-decoration:none; } a.xref:hover { text-decoration:underline; }
+.tablewrap { overflow-x:auto; margin:12px 0; }
+table { border-collapse:collapse; font-size:13.5px; min-width:100%; }
+th,td { text-align:left; padding:6px 12px; border-bottom:1px solid var(--grid); white-space:nowrap; }
+td:last-child { white-space:normal; min-width:220px; }
+th { color:var(--ink-2); font-weight:600; } tbody tr:hover { background:var(--code-bg); }
+ul { padding-left:22px; } li { margin:5px 0; }
+.gate { display:flex; flex-wrap:wrap; gap:10px; margin:10px 0 2px; }
+.gate .chip { border:1px solid var(--ring); border-radius:999px; padding:4px 12px; font-size:13px; background:var(--code-bg); }
+.gate .chip b { font-variant-numeric:tabular-nums; }
+figure.viz { margin:0; } figure.viz svg { width:100%; height:auto; display:block; }
+.ink-primary { fill:var(--ink); } .ink-secondary { fill:var(--ink-2); } .ink-muted { fill:var(--ink-muted); }
+.num { font-variant-numeric:tabular-nums; }
+svg .grid { stroke:var(--grid); stroke-width:1; } svg .axisline { stroke:var(--axis); stroke-width:1; }
+svg .threshold { stroke:var(--axis); stroke-width:1.25; stroke-dasharray:3 3; }
+svg .bar { stroke:var(--ring); stroke-width:1; }
+svg .row:hover .hit { fill:var(--code-bg); } svg .row .hit { transition:fill .1s; }
+figcaption { color:var(--ink-muted); font-size:12.5px; margin-top:8px; }
+.timeline { margin:14px 0 2px; }
+.timeline input[type=range] { width:100%; accent-color:var(--accent); margin:0; }
+.timeline-meta { display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+  font-size:12px; color:var(--ink-muted); font-variant-numeric:tabular-nums; }
+#hist-label { font-size:13px; font-weight:600; color:var(--ink-2); text-align:center; }
+svg .row.nohist { opacity:.35; }
+svg .row .bar, svg .row .score, svg .row .bandchip { transition:opacity .1s; }
+#tooltip { position:fixed; display:none; z-index:10; background:var(--surface); color:var(--ink);
+  border:1px solid var(--ring); border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,.18);
+  padding:10px 12px; font-size:12.5px; max-width:340px; pointer-events:none; }
+#tooltip .t-head { font-weight:600; margin-bottom:2px; }
+#tooltip .t-sub { color:var(--ink-2); }
+footer.gen { color:var(--ink-muted); font-size:12.5px; margin:28px 0 8px; border-top:1px solid var(--grid); padding-top:12px; }
+</style></head><body>
+<div class="layout">
+<nav class="toc"><p class="toc-title">booking-service</p>
+<a href="#scores">Score chart</a>
+<a href="#summary-2026-08">Summary</a>
+<a href="#review-scope">Review scope</a>
+<a href="#declared-assumptions-scout">Declared assumptions (scout pass @ 61041ed, 2026-08-24)</a>
+<a href="#user-overrides">User overrides</a>
+<a href="#open-findings">Open findings</a>
+<a href="#credited-as-intentional">Credited as intentional (recorded to prevent re-litigation)</a>
+<a href="#resolved-findings-archive">Resolved findings (archive)</a>
+<a href="#history">History</a>
+<a style="padding-left:22px" href="#aspect-LOG">Logic correctness — 3</a>
+<a style="padding-left:22px" href="#aspect-ERR">Error handling — 4</a>
+<a style="padding-left:22px" href="#aspect-SEC">Security — 3</a>
+<a style="padding-left:22px" href="#aspect-PAT">Code pattern — 10</a>
+<a style="padding-left:22px" href="#aspect-CON">Concurrency safety — 4</a>
+<a style="padding-left:22px" href="#aspect-CMP">Contract &amp; compatibility — 4</a>
+<a style="padding-left:22px" href="#aspect-LGG">Logging — 9</a>
+<a style="padding-left:22px" href="#aspect-TSQ">Test quality — 4</a>
+<a style="padding-left:22px" href="#aspect-TYP">Type &amp; null safety — 10</a>
+<a style="padding-left:22px" href="#aspect-RDB">Readability &amp; maintainability — 7</a>
+</nav>
+<main>
+<header class="page">
+  <h1>Code Review Ledger — booking-service</h1>
+  <div class="meta">Source: <code>review.md</code> · review: 2026-08-24 @ 61041ed (full review, 10 aspects, scope: whole repo) · page generated 2026-09-04</div>
+</header>
+
+<section class="panel" id="gate">
+  <h2 style="margin-top:0">Gate summary</h2>
+  <div class="gate">
+    <span class="chip">✕ do-not-ship aspects: <b>LOG, SEC</b></span>
+    <span class="chip">open criticals: <b>LOG-001, SEC-001</b></span>
+    <span class="chip">average (trend only): <b>5.8</b></span>
+  </div>
+  <p style="color:var(--ink-2);font-size:13.5px;margin-bottom:0">The verdict is per-aspect, never the average. Details in the summary and per-aspect findings below.</p>
+</section>
+
+<section class="card" id="scores">
+  <h2 style="margin-top:0">Per-aspect scores @ 2026-08-24</h2>
+  <figure class="viz">
+  <svg viewBox="0 0 904 344" role="img" aria-label="Per-aspect review scores, 0 to 10, with ship thresholds" font-family="system-ui,-apple-system,'Segoe UI',sans-serif">
+<rect x="200" y="30" width="156" height="288" fill="#d03b3b" opacity="0.055"/>
+<text x="278" y="22" text-anchor="middle" font-size="11" class="ink-muted">✕ do not ship ≤3</text>
+<rect x="356" y="30" width="260" height="288" fill="#fab219" opacity="0.055"/>
+<text x="486" y="22" text-anchor="middle" font-size="11" class="ink-muted">⚠ schedule fixes 4–7</text>
+<rect x="616" y="30" width="104" height="288" fill="#0ca30c" opacity="0.055"/>
+<text x="668" y="22" text-anchor="middle" font-size="11" class="ink-muted">✓ ship ≥8</text>
+<line x1="356" y1="28" x2="356" y2="320" class="threshold"/>
+<line x1="616" y1="28" x2="616" y2="320" class="threshold"/>
+<text x="200" y="334" text-anchor="middle" font-size="10.5" class="ink-muted">0</text>
+<line x1="304" y1="30" x2="304" y2="318" class="grid"/>
+<text x="304" y="334" text-anchor="middle" font-size="10.5" class="ink-muted">2</text>
+<line x1="408" y1="30" x2="408" y2="318" class="grid"/>
+<text x="408" y="334" text-anchor="middle" font-size="10.5" class="ink-muted">4</text>
+<line x1="512" y1="30" x2="512" y2="318" class="grid"/>
+<text x="512" y="334" text-anchor="middle" font-size="10.5" class="ink-muted">6</text>
+<line x1="616" y1="30" x2="616" y2="318" class="grid"/>
+<text x="616" y="334" text-anchor="middle" font-size="10.5" class="ink-muted">8</text>
+<line x1="720" y1="30" x2="720" y2="318" class="grid"/>
+<text x="720" y="334" text-anchor="middle" font-size="10.5" class="ink-muted">10</text>
+<line x1="200" y1="30" x2="200" y2="318" class="axisline"/>
+<g class="row" data-abbr="LOG" data-cy="48" data-name="Logic correctness" data-score="3" data-worst="critical" data-findings="LOG-001 C, LOG-002 m" data-band="✕ do not ship">
+<rect x="0" y="34" width="904" height="28" fill="transparent" class="hit"/>
+<text x="190" y="52" text-anchor="end" font-size="12.5" class="ink-secondary">Logic correctness <tspan class="ink-muted" font-size="10.5">LOG</tspan></text>
+<path d="M200,42 h152 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-152 z" fill="#d03b3b" class="bar"/>
+<text x="363" y="52" font-size="12" font-weight="600" class="ink-primary num score">3</text>
+<text x="776" y="52" font-size="11" class="ink-secondary bandchip">✕ do not ship</text>
+</g>
+<g class="row" data-abbr="ERR" data-cy="76" data-name="Error handling" data-score="4" data-worst="major" data-findings="ERR-001 M(w), ERR-002 M" data-band="⚠ schedule fixes">
+<rect x="0" y="62" width="904" height="28" fill="transparent" class="hit"/>
+<text x="190" y="80" text-anchor="end" font-size="12.5" class="ink-secondary">Error handling <tspan class="ink-muted" font-size="10.5">ERR</tspan></text>
+<path d="M200,70 h204 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-204 z" fill="#fab219" class="bar"/>
+<text x="415" y="80" font-size="12" font-weight="600" class="ink-primary num score">4</text>
+<text x="776" y="80" font-size="11" class="ink-secondary bandchip">⚠ schedule fixes</text>
+</g>
+<g class="row" data-abbr="SEC" data-cy="104" data-name="Security" data-score="3" data-worst="critical" data-findings="SEC-001 C" data-band="✕ do not ship">
+<rect x="0" y="90" width="904" height="28" fill="transparent" class="hit"/>
+<text x="190" y="108" text-anchor="end" font-size="12.5" class="ink-secondary">Security <tspan class="ink-muted" font-size="10.5">SEC</tspan></text>
+<path d="M200,98 h152 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-152 z" fill="#d03b3b" class="bar"/>
+<text x="363" y="108" font-size="12" font-weight="600" class="ink-primary num score">3</text>
+<text x="776" y="108" font-size="11" class="ink-secondary bandchip">✕ do not ship</text>
+</g>
+<g class="row" data-abbr="PAT" data-cy="132" data-name="Code pattern" data-score="10" data-worst="—" data-findings="—" data-band="✓ ship">
+<rect x="0" y="118" width="904" height="28" fill="transparent" class="hit"/>
+<text x="190" y="136" text-anchor="end" font-size="12.5" class="ink-secondary">Code pattern <tspan class="ink-muted" font-size="10.5">PAT</tspan></text>
+<path d="M200,126 h516 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-516 z" fill="#0ca30c" class="bar"/>
+<text x="727" y="136" font-size="12" font-weight="600" class="ink-primary num score">10</text>
+<text x="776" y="136" font-size="11" class="ink-secondary bandchip">✓ ship</text>
+</g>
+<g class="row" data-abbr="CON" data-cy="160" data-name="Concurrency safety" data-score="4" data-worst="major" data-findings="CON-001 M(w), CON-002 M" data-band="⚠ schedule fixes">
+<rect x="0" y="146" width="904" height="28" fill="transparent" class="hit"/>
+<text x="190" y="164" text-anchor="end" font-size="12.5" class="ink-secondary">Concurrency safety <tspan class="ink-muted" font-size="10.5">CON</tspan></text>
+<path d="M200,154 h204 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-204 z" fill="#fab219" class="bar"/>
+<text x="415" y="164" font-size="12" font-weight="600" class="ink-primary num score">4</text>
+<text x="776" y="164" font-size="11" class="ink-secondary bandchip">⚠ schedule fixes</text>
+</g>
+<g class="row" data-abbr="CMP" data-cy="188" data-name="Contract &amp; compatibility" data-score="4" data-worst="major" data-findings="CMP-001 M(w), CMP-002 M" data-band="⚠ schedule fixes">
+<rect x="0" y="174" width="904" height="28" fill="transparent" class="hit"/>
+<text x="190" y="192" text-anchor="end" font-size="12.5" class="ink-secondary">Contract &amp; compatibility <tspan class="ink-muted" font-size="10.5">CMP</tspan></text>
+<path d="M200,182 h204 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-204 z" fill="#fab219" class="bar"/>
+<text x="415" y="192" font-size="12" font-weight="600" class="ink-primary num score">4</text>
+<text x="776" y="192" font-size="11" class="ink-secondary bandchip">⚠ schedule fixes</text>
+</g>
+<g class="row" data-abbr="LGG" data-cy="216" data-name="Logging" data-score="9" data-worst="minor" data-findings="LGG-001 m" data-band="✓ ship">
+<rect x="0" y="202" width="904" height="28" fill="transparent" class="hit"/>
+<text x="190" y="220" text-anchor="end" font-size="12.5" class="ink-secondary">Logging <tspan class="ink-muted" font-size="10.5">LGG</tspan></text>
+<path d="M200,210 h464 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-464 z" fill="#0ca30c" class="bar"/>
+<text x="675" y="220" font-size="12" font-weight="600" class="ink-primary num score">9</text>
+<text x="776" y="220" font-size="11" class="ink-secondary bandchip">✓ ship</text>
+</g>
+<g class="row" data-abbr="TSQ" data-cy="244" data-name="Test quality" data-score="4" data-worst="major" data-findings="TSQ-001 M, TSQ-002 M, TSQ-003 M(w), TSQ-004 M, TSQ-005 m" data-band="⚠ schedule fixes">
+<rect x="0" y="230" width="904" height="28" fill="transparent" class="hit"/>
+<text x="190" y="248" text-anchor="end" font-size="12.5" class="ink-secondary">Test quality <tspan class="ink-muted" font-size="10.5">TSQ</tspan></text>
+<path d="M200,238 h204 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-204 z" fill="#fab219" class="bar"/>
+<text x="415" y="248" font-size="12" font-weight="600" class="ink-primary num score">4</text>
+<text x="776" y="248" font-size="11" class="ink-secondary bandchip">⚠ schedule fixes</text>
+</g>
+<g class="row" data-abbr="TYP" data-cy="272" data-name="Type &amp; null safety" data-score="10" data-worst="—" data-findings="—" data-band="✓ ship">
+<rect x="0" y="258" width="904" height="28" fill="transparent" class="hit"/>
+<text x="190" y="276" text-anchor="end" font-size="12.5" class="ink-secondary">Type &amp; null safety <tspan class="ink-muted" font-size="10.5">TYP</tspan></text>
+<path d="M200,266 h516 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-516 z" fill="#0ca30c" class="bar"/>
+<text x="727" y="276" font-size="12" font-weight="600" class="ink-primary num score">10</text>
+<text x="776" y="276" font-size="11" class="ink-secondary bandchip">✓ ship</text>
+</g>
+<g class="row" data-abbr="RDB" data-cy="300" data-name="Readability &amp; maintainability" data-score="7" data-worst="minor" data-findings="RDB-001 m(w), RDB-002 m, RDB-003 m, RDB-004 m" data-band="⚠ schedule fixes">
+<rect x="0" y="286" width="904" height="28" fill="transparent" class="hit"/>
+<text x="190" y="304" text-anchor="end" font-size="12.5" class="ink-secondary">Readability &amp; maintainability <tspan class="ink-muted" font-size="10.5">RDB</tspan></text>
+<path d="M200,294 h360 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-360 z" fill="#fab219" class="bar"/>
+<text x="571" y="304" font-size="12" font-weight="600" class="ink-primary num score">7</text>
+<text x="776" y="304" font-size="11" class="ink-secondary bandchip">⚠ schedule fixes</text>
+</g>
+</svg>
+  
+  <figcaption>Aspects in fixed catalog order (comparable across reviews). Bands: ≥8 ship · 4–7 schedule fixes · ≤3 do not ship. Exact values and finding IDs in the summary table below; hover a row for its open findings.</figcaption>
+  </figure>
+</section>
+
+<section class="card">
+<p>Method: aspect-scored review — severity sets the band, count refines within it; scores derive from open findings by fixed arithmetic. This document is the persistent ledger: scope, assumptions, overrides, open findings, archive, history. Finding IDs are stable and never reused. Keep the section names and order of this template — incremental reviews and future maintainers navigate by them.</p>
+<h3 id="summary-2026-08">Summary — 2026-08-24 @ 61041ed (full review, 10 aspects, scope: whole repo)</h3>
+<p><strong>Worst aspects: Security and Logic correctness, both at 3/10.</strong> Two criticals, in different aspects, both on reachable paths:</p>
+<ul><li><strong><a class="xref" href="#SEC-001">SEC-001</a></strong> — the internal contact endpoint performs no object-level authorization: any authenticated caller holding any booking reference retrieves that booking's name, email and phone.</li>
+<li><strong><a class="xref" href="#LOG-001">LOG-001</a></strong> — reschedule accepts and validates a new resource reference, carries it through four layers, then discards it at the controller; the caller receives success for a move that did not happen.</li></ul>
+<p>First full pass; no prior baseline, so every aspect ran a complete review. All ten aspect scores are new. Reviewing was performed by six clean-context subagents fanned out by reading pass, because this session authored the code — the orchestrating session only merged findings, adjudicated severity and computed scores.</p>
+<p>Two findings were merged during the merge step: the reschedule defect was raised independently by the structure reviewer as a minor readability issue and by the logic reviewer as a critical; it is one defect with one fix, homed in LOG at critical severity and cross-referenced from RDB. The "client mistakes logged at ERROR" symptom was likewise merged into <a class="xref" href="#ERR-001">ERR-001</a>, its root cause.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Aspect</th><th>Score</th><th>Worst open</th><th>Open findings</th></tr></thead>
+<tbody><tr><td>Logic correctness (LOG)</td><td><strong>3</strong></td><td>critical</td><td><a class="xref" href="#LOG-001">LOG-001</a> C, <a class="xref" href="#LOG-002">LOG-002</a> m</td></tr>
+<tr><td>Error handling (ERR)</td><td><strong>4</strong></td><td>major</td><td><a class="xref" href="#ERR-001">ERR-001</a> M(w), <a class="xref" href="#ERR-002">ERR-002</a> M</td></tr>
+<tr><td>Security (SEC)</td><td><strong>3</strong></td><td>critical</td><td><a class="xref" href="#SEC-001">SEC-001</a> C</td></tr>
+<tr><td>Code pattern (PAT)</td><td><strong>10</strong></td><td>—</td><td>—</td></tr>
+<tr><td>Concurrency safety (CON)</td><td><strong>4</strong></td><td>major</td><td><a class="xref" href="#CON-001">CON-001</a> M(w), <a class="xref" href="#CON-002">CON-002</a> M</td></tr>
+<tr><td>Contract &amp; compatibility (CMP)</td><td><strong>4</strong></td><td>major</td><td><a class="xref" href="#CMP-001">CMP-001</a> M(w), <a class="xref" href="#CMP-002">CMP-002</a> M</td></tr>
+<tr><td>Logging (LGG)</td><td><strong>9</strong></td><td>minor</td><td><a class="xref" href="#LGG-001">LGG-001</a> m</td></tr>
+<tr><td>Test quality (TSQ)</td><td><strong>4</strong></td><td>major</td><td><a class="xref" href="#TSQ-001">TSQ-001</a> M, <a class="xref" href="#TSQ-002">TSQ-002</a> M, <a class="xref" href="#TSQ-003">TSQ-003</a> M(w), <a class="xref" href="#TSQ-004">TSQ-004</a> M, <a class="xref" href="#TSQ-005">TSQ-005</a> m</td></tr>
+<tr><td>Type &amp; null safety (TYP)</td><td><strong>10</strong></td><td>—</td><td>—</td></tr>
+<tr><td>Readability &amp; maintainability (RDB)</td><td><strong>7</strong></td><td>minor</td><td><a class="xref" href="#RDB-001">RDB-001</a> m(w), <a class="xref" href="#RDB-002">RDB-002</a> m, <a class="xref" href="#RDB-003">RDB-003</a> m, <a class="xref" href="#RDB-004">RDB-004</a> m</td></tr></tbody>
+</table></div>
+<p>Rows stay in catalog order (the History table's column order), never sorted by score — so any two reviews line up row-for-row. The worst aspects are named in the prose above, not by reordering the table.</p>
+<p>Average (trend only, never the headline): <strong>5.8</strong>.</p>
+<h3 id="review-scope">Review scope</h3>
+<p>Whole repository at 61041ed — 123 tracked files: 53 Kotlin production sources, 17 Kotlin test sources, 33 <code>.sql</code> resources, 4 DDL files, the Gradle build, <code>application.yaml</code>, and the four design documents under <code>docs/backend-design/</code>. Working tree was clean at review time; no files were excluded from review for dirtiness.</p>
+<h3 id="declared-assumptions-scout">Declared assumptions (scout pass @ 61041ed, 2026-08-24)</h3>
+<p>Evidence-based detections; each states the weakest claim its evidence supports. Override any of these in User overrides — overrides persist and bind future reviews.</p>
+<ul><li><strong>Language(s)</strong>: Kotlin 2.3.21 (70 files: 53 main, 17 test), SQL (37 files: 33 resources + 4 DDL), Kotlin DSL build (2), YAML (2), Markdown (4), one Node generator script.</li>
+<li><strong>House pattern standard</strong>: repo convention, uniformly applied — <code>core/</code> holds domain types, pure rules and port interfaces with no framework imports; <code>repo/</code> holds JDBC adapters whose SQL is loaded from <code>.sql</code> resources at construction; <code>api/</code> holds controllers and wire DTOs; <code>sys/</code> holds configuration, clock, id generation and exception translation; <code>worker/</code> holds Spring adapters. Evidence: zero Spring/Jakarta imports under <code>core/</code>, zero layer-skip imports from <code>api/</code> or <code>worker/</code> into <code>repo/</code>, all 30 <code>sql.load()</code> calls in constructor position.</li>
+<li><strong>Auth model</strong>: in-code OAuth2 resource server; JWT verified by Spring Security, issuer required with no default. Tenant scoping is application-side in <code>core/booking/BookingAuthorization.kt</code>. Evidence: <code>sys/SecurityConfig.kt</code>, <code>application.yaml</code>.</li>
+<li><strong>Deployment model</strong>: assumed Kubernetes, two workloads (<code>api</code>, <code>worker</code>) from one image; basis: Spring profiles in code plus the design documents — <strong>capability evidence only</strong>. No Dockerfile, manifests, ingress config or CI are committed, so the repo does not prove where or how this runs. <a class="xref" href="#SEC-001">SEC-001</a> and <a class="xref" href="#CMP-001">CMP-001</a> both note where their consequence depends on this assumption.</li>
+<li><strong>Consumed contract surfaces</strong>: published Kafka stream <code>booking-lifecycle-v1</code> (payload built by <code>fn_emit_event</code> in the DDL); consumed topic <code>booking-gate-resolution-v1</code>; 16 HTTP endpoints whose intended inventory is <code>docs/backend-design/architecture-design.md</code> section 5.</li>
+<li><strong>Tests</strong>: three declared tiers — pure unit, stubbed unit with hand-written fakes (no mocking framework, confirmed absent from the build), and <code>*IT</code> integration tests against a real PostgreSQL via Testcontainers or an external database named by <code>BOOKING_TEST_JDBC_URL</code>. 72 tests, all passing at this hash. Gaps found are recorded as TSQ findings, not treated as intentional.</li>
+<li><strong>Exclusions</strong>: <code>docs/backend-design/data-dictionary.yaml</code> and <code>docs/backend-design/design-review.html</code> are generated artifacts; <code>gradle/wrapper/</code> is vendored; <code>build/</code> is untracked.</li>
+<li><strong>Scoring interpretation</strong>: within the worst open tier each finding counts one unit (widespread counts two; doubling never applies to criticals); score = band start − step × (units − 1), clamped at the band floor (critical 3/−1/0, major 6/−1/4, minor 9/−0.5/7). The first unit is free — it sets the band.</li></ul>
+<h3 id="user-overrides">User overrides</h3>
+<p><em>None yet.</em></p>
+<h3 id="open-findings">Open findings</h3>
+<p>Severity: C = critical, M = major, m = minor; (w) = widespread (counts double). All findings open @ 61041ed. Finding bodies stay pinned to their discovery hash. Aspect sections stay in catalog order.</p>
+<hr class="aspect-rule">
+<h4 id="aspect-LOG">Logic correctness (LOG) — 3/10 · 2 open</h4>
+<h4 class="finding" id="LOG-001">LOG-001 · C · isolated — Reschedule silently discards the caller's requested new resource</h4>
+<ul><li><code>src/main/kotlin/dev/booking/api/BookingController.kt:88</code> — hardcodes <code>newResourceId = null</code></li>
+<li><code>src/main/kotlin/dev/booking/api/BookingDtos.kt:45</code> — <code>RescheduleRequest.resourceRef</code> declared on the wire</li>
+<li>Failing input: <code>POST /v1/bookings/{ref}/reschedule</code> with <code>{"startsAt": "&lt;valid future time&gt;", "resourceRef": "&lt;a different eligible resource&gt;"}</code> for a booking currently on resource A. UC8 specifies "the booking id and a new start time (and optionally a new resource)". Actual: the booking moves to the new time and stays on resource A, with a success response. <code>TransitionResponse</code> carries no resource field, so the client cannot detect the divergence.</li>
+<li>The plumbing beneath the controller is complete and unused: <code>core/booking/BookingLifecycleService.kt:72,79</code> accepts and forwards it, <code>repo/JdbcBookingLifecycle.kt:73</code> binds it, and <code>ddl/03-functions.sql:569</code> applies <code>COALESCE(p_new_resource_id, v_resource)</code> — the database function was written specifically to honour a resource change.</li>
+<li>Zero reschedule invocations exist in the test suite (verified), so no test protects any part of UC8.</li>
+<li>Cross-ref: RDB — raised independently there as a dead wire-contract field. One defect, one fix, homed here; deducted once.</li></ul>
+<h4 class="finding" id="LOG-002">LOG-002 · m · isolated — Dead branch in the retry-backoff overflow guard</h4>
+<ul><li><code>src/main/kotlin/dev/booking/core/outbox/OutboxDomain.kt:36-43</code></li>
+<li><code>exponent = attemptCount.coerceIn(0, 30)</code> then <code>1L shl exponent</code> yields at most 2^30, so the <code>delaySeconds &lt;= 0</code> disjunct guarding against overflow is unreachable for every input. The <code>coerceIn</code> is the real protection; the disjunct duplicates it ineffectually and reads as if it were load-bearing.</li></ul>
+<hr class="aspect-rule">
+<h4 id="aspect-ERR">Error handling (ERR) — 4/10 · 2 open</h4>
+<h4 class="finding" id="ERR-001">ERR-001 · M · widespread — Client input errors that are not bean-validation surface as 500 defects</h4>
+<ul><li><code>src/main/kotlin/dev/booking/api/ApiExceptionHandler.kt:25,39-45</code> — only <code>MethodArgumentNotValidException</code> is recognised; everything else reaches the <code>Exception::class</code> catch-all, which answers 500 <code>INTERNAL</code></li>
+<li><code>src/main/kotlin/dev/booking/core/listing/Listing.kt:37-38</code> via <code>api/ListingController.kt:27-31,41-45</code> — <code>Page.init</code>'s <code>require()</code> throws <code>IllegalArgumentException</code> on <code>?limit=0</code> or <code>?limit=99999</code>, straight from an unclamped request parameter</li>
+<li><code>repo/JdbcAvailabilityAdminRepository.kt</code>, <code>repo/JdbcProviderSetupRepository.kt</code> — neither routes through <code>translatingRuleViolations</code> (verified: 0 uses in either), so DDL CHECK violations reachable from client fields (<code>ddl/01-create-tables.sql:94</code> timezone, <code>:238</code> rule window, <code>:263</code> exception window) arrive as generic <code>DataAccessException</code></li>
+<li>Every <code>@PathVariable UUID</code> and <code>@RequestParam Instant</code> across all controllers — a malformed value raises <code>MethodArgumentTypeMismatchException</code>, caught by the same catch-all before Spring's own 400 mapping applies</li>
+<li>Failing input: <code>GET /v1/bookings?limit=0</code> with a valid token returns 500 with a stack trace logged at ERROR, where 400 is the correct answer.</li>
+<li>Cross-ref: LGG — the same paths log routine client mistakes at ERROR with a full stack trace, indistinguishable from a real defect to an operator. Same root, same fix, deducted once here.</li></ul>
+<h4 class="finding" id="ERR-002">ERR-002 · M · isolated — The documented dead-letter contract for the gate consumer does not exist</h4>
+<ul><li><code>src/main/kotlin/dev/booking/worker/GateResolutionListener.kt:20-23</code> — the class comment states a malformed message "is logged and rethrown so the container's error handler can dead-letter it rather than silently discarding a decision another service believes it made"</li>
+<li>Verified: zero <code>try</code>/<code>catch</code> in <code>onMessage</code>, and zero <code>CommonErrorHandler</code> / <code>DeadLetterPublishingRecoverer</code> beans anywhere in <code>src/main</code> or <code>application.yaml</code></li>
+<li>Without that bean the listener falls back to the framework default: a few immediate retries, then the record is logged by the framework and skipped — precisely the silent discard the comment claims the design avoids. The channel is documented as carrying compensating decisions (a refund against an expired hold), so a dropped message has financial consequence once a producer exists.</li></ul>
+<hr class="aspect-rule">
+<h4 id="aspect-SEC">Security (SEC) — 3/10 · 1 open</h4>
+<h4 class="finding" id="SEC-001">SEC-001 · C · isolated — Internal contact endpoint has no object-level authorization; any authenticated caller can retrieve any tenant's PII</h4>
+<ul><li><code>src/main/kotlin/dev/booking/api/InternalController.kt:28</code> — <code>contacts(bookingRef)</code> takes no caller identity at all</li>
+<li><code>src/main/kotlin/dev/booking/core/listing/ListingService.kt:45</code> — passes the reference straight through with no ownership or tenancy check</li>
+<li><code>src/main/resources/sql/listing/booking_contacts.sql:12</code> — the only predicate is <code>WHERE b.public_ref = :bookingRef::uuid</code>; no caller-scoping join</li>
+<li><code>src/main/kotlin/dev/booking/sys/SecurityConfig.kt:25-28</code> — <code>/internal/v1/**</code> is not distinguished from <code>/v1/**</code>; both fall under <code>anyRequest().authenticated()</code></li>
+<li>Named path: any subject holding an ordinary end-user JWT — the exact population every public endpoint accepts → <code>GET /internal/v1/bookings/{bookingRef}/contacts</code> → <code>displayName</code>, <code>email</code>, <code>phone</code>, <code>cancellationReason</code> for <strong>any</strong> booking, owned or not. Verified: zero <code>hasAuthority</code>, <code>hasRole</code>, <code>SCOPE_</code>, <code>X509</code> or client-credentials checks exist anywhere in <code>src/main</code>.</li>
+<li><code>docs/backend-design/architecture-design.md:256</code> documents this endpoint as requiring "service-to-service auth" and never publicly routed. Neither is implemented; the second is a deployment claim no committed manifest supports (see the deployment assumption above). R18's tenant scoping — enforced in <code>BookingAuthorization</code>, <code>ListingService.providerCalendar</code>, <code>ProviderSetupService.forProvider</code> and <code>AvailabilityManagementService.forProvider</code> — is simply absent here. Classic IDOR (<a class="xref" href="#CWE-639">CWE-639</a>) on a PII-bearing surface.</li>
+<li>This endpoint exists to compensate for PD17 keeping PII out of the event stream; as written it returns that PII to a wider audience than the events would have.</li></ul>
+<hr class="aspect-rule">
+<h4 id="aspect-PAT">Code pattern (PAT) — 10/10 · 0 open</h4>
+<p>No findings. Sweep backing the negative claim: all 53 Kotlin production files, all 33 <code>.sql</code> resources, the four DDL files and <code>build.gradle.kts</code> read in full; checked for framework imports under <code>core/</code> (none), layer-skip imports into <code>repo/</code> from <code>api/</code> or <code>worker/</code> (none), <code>sql.load()</code> outside constructor position (none of 30), and SQL identifier splicing (none — all 33 files use named <code>:param::type</code> binds exclusively).</p>
+<hr class="aspect-rule">
+<h4 id="aspect-CON">Concurrency safety (CON) — 4/10 · 2 open</h4>
+<h4 class="finding" id="CON-001">CON-001 · M · widespread — A shared, non-thread-safe PRNG backs every identifier the service mints</h4>
+<ul><li><code>src/main/kotlin/dev/booking/sys/TimeAndIdConfig.kt:21</code> — <code>RandomGenerator.getDefault()</code> registered as a singleton bean</li>
+<li><code>src/main/kotlin/dev/booking/sys/IdGenerator.kt:26-33</code> — <code>UuidV7Generator.newId()</code> calls <code>nextInt</code> then <code>nextLong</code> on that shared instance with no synchronization</li>
+<li>Consumers on hot paths: <code>sys/CorrelationIdFilter.kt:30</code> (every request without an inbound correlation header), plus <code>BookingService</code>, <code>BookingLifecycleService</code>, <code>AvailabilityManagementService</code>, <code>ProviderSetupService</code> and <code>GateResolutionService</code> — all singletons invoked from concurrent virtual threads (<code>spring.threads.virtual.enabled=true</code>)</li>
+<li><code>getDefault()</code> returns <code>L32X64MixRandom</code>, whose own documentation states instances "are not thread-safe... designed to be split, not shared, across threads"; its state fields are plain and non-volatile.</li>
+<li>Demonstrated, not inferred: 64 virtual threads drawing the same <code>nextInt</code>/<code>nextLong</code> pair the generator uses produced <strong>709 duplicate draws in 12,800</strong> on this JDK (25.0.2). Two bookings minted in the same millisecond can therefore receive byte-identical <code>public_ref</code> values; the unique constraint at <code>ddl/01-create-tables.sql:359</code> then fails one otherwise-valid request. Request-scoped and loud, hence major rather than critical.</li></ul>
+<h4 class="finding" id="CON-002">CON-002 · M · isolated — Unordered two-row lock acquisition in <code>fn_reschedule_booking</code> can deadlock two concurrent reschedules</h4>
+<ul><li><code>docs/backend-design/ddl/03-functions.sql:579-598</code> — releases the old session row then takes the new one, both <code>session</code> rows, in one transaction, in fixed old-then-new order with no global row ordering</li>
+<li>Interleaving: two reschedules swapping slots on one resource. T1 locks session S2 on release; T2 locks S1 on release; T1's <code>INSERT ... ON CONFLICT</code> targets S1 and blocks on T2; T2's targets S2 and blocks on T1. Circular wait; Postgres's detector kills one transaction after <code>deadlock_timeout</code>. The surviving request succeeds, the other fails with a deadlock error rather than a domain rejection.</li></ul>
+<hr class="aspect-rule">
+<h4 id="aspect-CMP">Contract &amp; compatibility (CMP) — 4/10 · 2 open</h4>
+<h4 class="finding" id="CMP-001">CMP-001 · M · widespread — Migrations apply at every pod's startup across two independently scaled workloads, with no rolling-deploy coordination</h4>
+<ul><li><code>src/main/resources/application.yaml:16-18</code> — <code>flyway.enabled: true</code>, no profile-specific override; verified that no <code>@Profile</code> gates Flyway in either workload</li>
+<li><code>build.gradle.kts:64-80</code> — one generated migration resource set, consumed identically by both workloads from the same jar</li>
+<li>The first pod of <em>either</em> workload to start on a new version advances the schema for the whole deployment, while old-version pods of the other workload keep serving. Flyway's own lock prevents concurrent corruption of the migration itself; it does not address the rolling window. No migration job, leader gate, or expand/contract discipline exists in the repo. Not yet triggered — V1–V4 are an additive baseline — but the delivery mechanism carries the hazard.</li>
+<li>Consequence depends on the deployment assumption above.</li></ul>
+<h4 class="finding" id="CMP-002">CMP-002 · M · isolated — The availability endpoint is documented as unauthenticated but the filter chain requires a token</h4>
+<ul><li><code>docs/backend-design/architecture-design.md:242</code> — "Unauthenticated browsing permitted", stated for this endpoint alone in the API inventory</li>
+<li><code>src/main/kotlin/dev/booking/sys/SecurityConfig.kt:26-27</code> — only <code>/actuator/**</code> is permitted; <code>anyRequest().authenticated()</code> covers the availability path</li>
+<li>A client built to the published contract calls <code>GET /v1/providers/{ref}/availability</code> without a bearer token and receives 401 before reaching the controller. Implementation and documented contract disagree; whichever is authoritative, the other is wrong today.</li></ul>
+<hr class="aspect-rule">
+<h4 id="aspect-LGG">Logging (LGG) — 9/10 · 1 open</h4>
+<h4 class="finding" id="LGG-001">LGG-001 · m · isolated — Worker-side logs never carry a correlation id</h4>
+<ul><li><code>src/main/kotlin/dev/booking/sys/CorrelationIdFilter.kt</code> — a <code>OncePerRequestFilter</code>, so it runs only on the HTTP pipeline</li>
+<li><code>core/outbox/OutboxRelay.kt:45-48</code>, <code>worker/WorkerSchedules.kt</code>, <code>worker/GateResolutionListener.kt:40-43</code> — every worker log line renders the correlation field as <code>-</code> under the pattern at <code>application.yaml:71-73</code></li>
+<li>The gate listener has an available surrogate (<code>resolution.messageId</code>) that is never placed in MDC, so a saga cannot be followed across the consumer and the booking-side transitions it causes.</li></ul>
+<hr class="aspect-rule">
+<h4 id="aspect-TSQ">Test quality (TSQ) — 4/10 · 5 open</h4>
+<h4 class="finding" id="TSQ-001">TSQ-001 · M · isolated — NF4's concurrency guarantee has no test exercising concurrent access</h4>
+<ul><li><code>src/test/kotlin/dev/booking/repo/JdbcBookingRepositoryIT.kt:176</code> — the nearest test calls <code>create()</code> twice sequentially on one thread</li>
+<li>Verified: zero concurrency primitives anywhere in <code>src/test</code> (swept for thread, executor, coroutine, async, parallel, latch, future, concurrent — 0 matches). The sequential test proves the exclusion constraint rejects a <em>later</em> conflicting insert, not that it survives two <em>simultaneous</em> ones — which is the failure mode NF4 names as "the single most important correctness property of the service".</li></ul>
+<h4 class="finding" id="TSQ-002">TSQ-002 · M · isolated — R14 (DST-correct availability) is untested and the fixtures structurally exclude it</h4>
+<ul><li>Provider fixtures at <code>JdbcBookingRepositoryIT.kt:68</code>, <code>BookingLifecycleIT.kt:78</code>, <code>AvailabilityManagementIT.kt:71</code>, <code>ProviderOnboardingIT.kt:86</code> — verified: the only timezone literal present in the entire test suite is <code>'UTC'</code></li>
+<li>UTC never observes DST, so no test can observe an offset change across a transition date even incidentally. The DST-sensitive logic lives in <code>fn_search_availability</code>; <code>AvailabilityWindowTest</code> covers only window-span bounds. Zero DST or non-UTC zone tokens in <code>src/test</code> (verified).</li></ul>
+<h4 class="finding" id="TSQ-003">TSQ-003 · M · widespread — The four integration classes share one database and wipe tables unscoped to their own fixtures</h4>
+<ul><li><code>src/test/kotlin/dev/booking/repo/TestDatabase.kt:32-47</code> — one lazy singleton <code>DataSource</code> for the whole run</li>
+<li><code>JdbcBookingRepositoryIT.kt:53-63</code>, <code>BookingLifecycleIT.kt:67-73</code>, <code>AvailabilityManagementIT.kt:58-64</code>, <code>ProviderOnboardingIT.kt:68-75</code> — each runs table-wide <code>DELETE FROM</code> in <code>@BeforeTest</code> with no scoping to its own rows</li>
+<li>No <code>junit-platform.properties</code> exists and <code>tasks.test</code> sets no parallel configuration, so classes happen to run sequentially today. Nothing in the test code enforces that: enabling parallel class execution, or two runs pointed at the same <code>BOOKING_TEST_JDBC_URL</code>, has one class's fixture wipe destroy another's in-flight rows.</li></ul>
+<h4 class="finding" id="TSQ-004">TSQ-004 · M · isolated — Both Kafka adapters are exercised only through fakes that assume they agree</h4>
+<ul><li><code>src/main/kotlin/dev/booking/worker/KafkaEventPublisher.kt:30-44</code> builds an envelope; <code>src/main/kotlin/dev/booking/worker/GateResolutionListener.kt:46-68</code> parses a different shape</li>
+<li>Verified: zero test references to either class. <code>OutboxRelayTest</code> and <code>BookingLifecycleIT</code> use <code>EventPublisher</code> fakes that only record calls; <code>GateResolutionServiceTest</code> and <code>BookingLifecycleIT</code> construct <code>GateResolution</code> directly in Kotlin, never through <code>parse()</code>; <code>ApplicationContextIT:57</code> disables the listener and asserts only that beans exist. An envelope-shape change or a field-name mismatch is caught by nothing.</li></ul>
+<h4 class="finding" id="TSQ-005">TSQ-005 · m · isolated — A test asserts nothing and its name claims more than its body checks</h4>
+<ul><li><code>src/test/kotlin/dev/booking/core/booking/GatePolicyTest.kt:27-32</code> — <code>every confirmation mode has a decided gate</code> iterates the enum calling <code>selectGate</code> with no assertion. <code>selectGate</code> is an exhaustive <code>when</code> with no <code>else</code>, so the property the name claims is a compiler guarantee; the test can only fail if the function throws, and the two preceding tests already assert both values.</li></ul>
+<hr class="aspect-rule">
+<h4 id="aspect-TYP">Type &amp; null safety (TYP) — 10/10 · 0 open</h4>
+<p>No findings. Sweep backing the negative claim: every <code>requireNotNull</code>, <code>!!</code> and <code>error(...)</code> site across 11 files traced to its guard; every enum under <code>core/</code> diffed code-for-code and id-for-id against <code>ddl/04-seed-lookups.sql</code> and the <code>RAISE ... ERRCODE</code> sites in <code>ddl/03-functions.sql</code> (all match); all 16 Elvis operators checked for failure-into-default collapse (none found); <code>AvailabilityWindow</code>, <code>Page</code> and the UUIDv7 bit layout checked against RFC 9562. One asymmetry noted below the evidence bar and recorded as intentional rather than as a finding.</p>
+<hr class="aspect-rule">
+<h4 id="aspect-RDB">Readability &amp; maintainability (RDB) — 7/10 · 4 open</h4>
+<h4 class="finding" id="RDB-001">RDB-001 · m · widespread — Provider authorization resolution duplicated across three call sites</h4>
+<ul><li><code>src/main/kotlin/dev/booking/core/management/AvailabilityManagement.kt:106-116</code></li>
+<li><code>src/main/kotlin/dev/booking/core/management/ProviderSetup.kt:96-106</code></li>
+<li><code>src/main/kotlin/dev/booking/core/listing/ListingService.kt:36-38</code></li>
+<li>All three implement the same two-step rule — resolve <code>providerRef</code>, then check membership, else answer as absent — with no shared abstraction across two packages. A change to the rule requires three edits in lockstep and nothing enforces they stay consistent.</li></ul>
+<h4 class="finding" id="RDB-002">RDB-002 · m · isolated — Magic integer state ids mixed with symbolic text codes inside one function</h4>
+<ul><li><code>docs/backend-design/ddl/03-functions.sql:261,357,360,464,473,502-506,603-611</code></li>
+<li><code>fn_transition_booking</code> tests the target state by text code at line 464 and by raw seeded integer at 502-506, for the same concept in the same function; a reader must open <code>04-seed-lookups.sql</code> to decode <code>1</code>/<code>2</code>/<code>3</code> at each site.</li></ul>
+<h4 class="finding" id="RDB-003">RDB-003 · m · isolated — Shared test helper defined at the bottom of an unrelated test class's file</h4>
+<ul><li><code>src/test/kotlin/dev/booking/repo/AvailabilityManagementIT.kt:198-202</code> defines <code>object JdbcClientHolder</code>, consumed from <code>ProviderOnboardingIT.kt:48</code></li>
+<li><code>TestDatabase.kt</code> already exists as the home for shared integration-test infrastructure; a reader of <code>ProviderOnboardingIT</code> has no local clue where the helper comes from.</li></ul>
+<h4 class="finding" id="RDB-004">RDB-004 · m · isolated — Terse naming and chained regex in the design-doc generator</h4>
+<ul><li><code>docs/backend-design/build-review.mjs:37-63,84-118,134-161</code></li>
+<li>Pervasive single-letter identifiers combined with chained <code>.replace()</code> calls; the only file in scope with this naming density, against descriptive naming throughout the Kotlin sources.</li></ul>
+<h3 id="credited-as-intentional">Credited as intentional (recorded to prevent re-litigation)</h3>
+<ul><li><strong>The broad <code>catch (Exception)</code> in <code>core/outbox/OutboxRelay.kt:33</code></strong> — the comment claims it is an integration edge where every failure has one remedy, and the claim was verified line-by-line: the reason is persisted via <code>recordFailure</code>, counted into <code>DispatchReport</code>, and logged with event id, booking ref and attempt number. Not an error-swallow.</li>
+<li><strong>Nine <code>Optional.orElse(null)</code> sites across six repositories</strong> — all are zero-row translations on plain SELECTs, not catches around an error; each caller treats the resulting null as a distinct domain outcome. Not a benign-default collapse.</li>
+<li><strong><code>core/listing/ListingService.kt:24-27</code> returning <code>emptyList()</code></strong> when a caller has no customer profile — documented as a deliberate business decision ("not an error").</li>
+<li><strong>The lease-free outbox claim in <code>sql/outbox/claim_due_events.sql</code></strong> — the comment's trade (duplicate publishes permitted, ordering preserved) was verified to hold: only the oldest undispatched event per booking is claimed, <code>publish</code> blocks on the broker acknowledgement before <code>markDispatched</code>, and <code>fn_transition_booking</code> locks the booking row so outbox ids for one booking are strictly increasing. Duplicates are possible; reordering and loss are not.</li>
+<li><strong><code>GateResolutionListener.parse</code>'s <code>requireNotNull</code> guards on external input</strong> — loud failure on a malformed message is the documented intent. Note this credits only the <em>loud failure</em> half; the dead-letter half is <a class="xref" href="#ERR-002">ERR-002</a>.</li>
+<li><strong><code>ConfirmationMode.valueOf</code> used bare</strong> at <code>JdbcBookingLifecycle.kt:44</code> and <code>JdbcBookingRepository.kt:41</code>, unlike <code>BookingState.ofCode</code>'s custom divergence message — no currently reachable input triggers it, so it fails the evidence bar. Worth revisiting only if a <code>confirmation_mode</code> row is added without a matching enum entry.</li></ul>
+<h3 id="resolved-findings-archive">Resolved findings (archive)</h3>
+<p>One line per resolved finding — <code>&lt;ID&gt; · &lt;C|M|m&gt; · &lt;title&gt; · &lt;files&gt; · resolved @&lt;hash&gt;</code>; full bodies live in this document's git history. A reintroduced defect reopens its ID here (moves back to Open findings with <code>reopened @&lt;hash&gt;</code>), never gets a new one.</p>
+<p><em>None yet.</em></p>
+<h3 id="history">History</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Date</th><th>Hash</th><th>LOG</th><th>ERR</th><th>SEC</th><th>PAT</th><th>CON</th><th>CMP</th><th>LGG</th><th>TSQ</th><th>TYP</th><th>RDB</th><th>Worst</th><th>Avg</th></tr></thead>
+<tbody><tr><td>2026-08-24</td><td>61041ed</td><td>3</td><td>4</td><td>3</td><td>10</td><td>4</td><td>4</td><td>9</td><td>4</td><td>10</td><td>7</td><td>SEC/LOG 3</td><td>5.8</td></tr></tbody>
+</table></div>
+<p>Per-aspect baselines (diff basis for the next incremental review): all ten aspects @ 61041ed, scope: whole repo. No unbaselined files — the tree was clean and every tracked file was in scope.</p>
+</section>
+
+<footer class="gen">Generated from <code>review.md</code> on 2026-09-04 — do not edit this page; regenerate with the <em>reviewing-code-by-aspect</em> skill's <code>scripts/render_review.mjs</code> instead. Agents must consume the markdown ledger, not this page. Fully self-contained; no external dependencies.</footer>
+</main>
+</div>
+<div id="tooltip"></div>
+<script>
+const tip = document.getElementById('tooltip');
+const FRAMES = null;
+const GEO = {"labelW":200,"plotW":520,"barH":12};
+const BANDS = {"noship":{"color":"#d03b3b","icon":"✕","label":"do not ship"},"fix":{"color":"#fab219","icon":"⚠","label":"schedule fixes"},"ship":{"color":"#0ca30c","icon":"✓","label":"ship"}};
+const bandOf = (s) => (s <= 3 ? 'noship' : s >= 8 ? 'ship' : 'fix');
+const rows = [...document.querySelectorAll('svg .row')];
+let atLatest = true;
+
+function applyFrame(i) {
+  const f = FRAMES[i];
+  atLatest = i === FRAMES.length - 1;
+  for (const row of rows) {
+    const s = f.scores[row.dataset.abbr];
+    row.classList.toggle('nohist', s === undefined);
+    if (s === undefined) continue; // custom aspect with no history column: dim, keep latest bar
+    const cy = +row.dataset.cy, w = (s / 10) * GEO.plotW, rr = Math.min(4, w), b = BANDS[bandOf(s)];
+    const bar = row.querySelector('.bar');
+    bar.setAttribute('d', 'M' + GEO.labelW + ',' + (cy - GEO.barH / 2) + ' h' + (w - rr) +
+      ' a' + rr + ',' + rr + ' 0 0 1 ' + rr + ',' + rr + ' v' + (GEO.barH - 2 * rr) +
+      ' a' + rr + ',' + rr + ' 0 0 1 ' + (-rr) + ',' + rr + ' h' + (-(w - rr)) + ' z');
+    bar.setAttribute('fill', b.color);
+    const num = row.querySelector('.score');
+    num.setAttribute('x', GEO.labelW + w + 7);
+    num.textContent = s;
+    row.querySelector('.bandchip').textContent = b.icon + ' ' + b.label;
+    row.dataset.curScore = s;
+    row.dataset.curBand = b.icon + ' ' + b.label;
+  }
+  const label = document.getElementById('hist-label');
+  if (label) label.textContent = f.date + ' @ ' + f.hash + ' · avg ' + (f.avg || '—') + (atLatest ? ' (latest)' : '');
+}
+const range = document.getElementById('histrange');
+if (range && FRAMES) { range.addEventListener('input', () => applyFrame(+range.value)); applyFrame(FRAMES.length - 1); }
+
+for (const row of rows) {
+  row.addEventListener('mousemove', (e) => {
+    const d = row.dataset;
+    if (row.classList.contains('nohist')) {
+      tip.innerHTML = '<div class="t-head">' + d.name + ' (' + d.abbr + ')</div>' +
+        '<div class="t-sub">no history for this aspect at this review point</div>';
+    } else if (atLatest) {
+      tip.innerHTML = '<div class="t-head">' + d.name + ' (' + d.abbr + ') — ' + d.score + '/10</div>' +
+        '<div class="t-sub">' + d.band + ' · worst open: ' + d.worst + '</div>' +
+        '<div class="t-sub">open: ' + d.findings + '</div>';
+    } else {
+      tip.innerHTML = '<div class="t-head">' + d.name + ' (' + d.abbr + ') — ' + (d.curScore || d.score) + '/10</div>' +
+        '<div class="t-sub">' + (d.curBand || d.band) + '</div>' +
+        '<div class="t-sub">open findings are listed only for the latest review</div>';
+    }
+    tip.style.display = 'block';
+    const pad = 14, vw = window.innerWidth;
+    let x = e.clientX + pad; if (x + 340 > vw) x = e.clientX - 340 - pad;
+    tip.style.left = Math.max(8, x) + 'px';
+    tip.style.top = (e.clientY + pad) + 'px';
+  });
+  row.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+}
+</script>
+</body></html>
