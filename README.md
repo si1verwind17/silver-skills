@@ -42,10 +42,9 @@ shared `.agents/skills/` directory of the current repo; see `gh skill install
 gh skill install si1verwind17/silver-skills
 ```
 
-**Antigravity CLI (`agy`, the successor of Gemini CLI)** — reads the same
-`.agents/skills/` directory, so the `gh skill install` line above installs for
-it too. For a user-wide install, copy the `skills/<name>/` directories into
-`~/.antigravity/skills/`. `/skills` inside `agy` lists what it loaded.
+**Antigravity CLI** — reads the same `.agents/skills/` directory, so the
+`gh skill install` line above installs for it too. For a user-wide install,
+copy the `skills/<name>/` directories into `~/.antigravity/skills/`.
 
 **Anything else** — copy the `skills/<name>/` directories you want into your
 agent's skills directory (`.agents/skills/`, `.claude/skills/`, `.github/skills/`,

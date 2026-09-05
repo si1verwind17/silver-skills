@@ -52,6 +52,27 @@ the hits.
   The leak is usually the exception's own rendered message — trace what
   the logged value renders as, not only what it is named.
 
+- **Discarded results of external mutations → ERR / LOG.** A call that
+  changes state outside the process (place, cancel, transfer, publish,
+  write) whose response is dropped — bound to `_`, `.unit`/`.void`,
+  `await`ed unassigned, or a status checked with the body ignored. Lead
+  when the response carries something the ledger or the caller needs
+  (filled quantity, affected rows, a partial-success status).
+- **Numeric parse collapsed to zero → ERR / LOG.** `toXOption.getOrElse(0)`,
+  `Try(…).getOrElse(0)`, `parseFloat(x) || 0`, `int(x or 0)`,
+  `Number(x) ?? 0` on a quantity, price, fee, or balance. Lead when the
+  zero flows into a write or a guard rather than a rejection.
+- **Retry budget against the caller's deadline → ERR / CON.** Every retry
+  or backoff schedule and every client timeout in scope, each with its
+  worst-case duration. Lead when a callee's worst case exceeds the timeout
+  of a caller that mutates state, so the caller gives up on work still
+  running.
+- **Caller-supplied clock or identity → SEC.** Request fields that name a
+  time, account, tenant, user, or role and reach persistence, pricing, or
+  an authorization decision without being bound to the authenticated
+  principal or the server clock. Lead per field; the reach answer decides
+  the tier under the declared trust model.
+
 Classes earned from real misses join this list with their home aspect.
 
 ## Core
@@ -76,9 +97,10 @@ What fails review is the path nobody decided about. Includes retry and
 idempotency: retry is an error-handling decision, and idempotency is what
 makes it safe.
 
-- C: silent failure in any form — swallowed errors, catch-all returning
-  success, fire-and-forget async, default values on failure with no signal,
-  errors swallowed mid-mutation leaving partial state; unhandled errors with
+- C: silent failure with external or process residue — swallowed errors,
+  catch-all returning success, fire-and-forget async, default values on
+  failure with no signal, errors swallowed mid-mutation leaving partial
+  state (a silent failure whose residue is one wrong response is M); unhandled errors with
   process blast radius (one bad input kills the service or wedges a
   consumer); **retry of a non-idempotent operation** (the double-charge
   shape).

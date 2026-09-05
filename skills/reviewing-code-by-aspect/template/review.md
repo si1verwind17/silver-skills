@@ -64,6 +64,11 @@ bind future reviews.
   these; they need not already know them.>
 - **Sweeps run**: <one line per mechanical sweep (aspects.md): pattern ·
   scope · hits · adjudication summary>
+- **Domain-context checklist**: <when `docs/domain-context.md` exists — one
+  line per §6 invariant (held / violated at file:line / not reachable), per
+  §7 hazard (credited / filed as ID / not found), and per not-exercised
+  operation — verdict and location only, no narrative; omit the bullet when
+  the file is absent>
 - **External-state journeys**: <operations enumerated for the journey table
   (SKILL.md) and any empty cells>
 - **Scoring interpretation**: none → 10; minors only → 9 flat (listed and
@@ -94,6 +99,8 @@ the section boundary visible mid-scroll.
 **<ABBR>-<NNN> · <C|M|m> · <isolated|widespread> — <title>**
 - `<file:line>` <occurrence list — one finding, many occurrences, never one
   finding per occurrence>
+- Worksheet: reach <caller + condition, or *latent*> · residue
+  <external|process|request|none> · signal <none|caller|operator> → <tier>
 - <The evidence this finding's class requires — failing input, source→target
   path, scale/heat, per aspects.md. A claim without evidence is not a
   finding.>

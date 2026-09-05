@@ -31,11 +31,20 @@ IDs are `ABBR-NNN` — aspect abbreviation, hyphen, three-digit zero-padded
 sequence, the same form in every aspect (never `SEC-3`, never `PAT-a`), and
 never reused — so incremental reviews, overrides and fix tasks can name
 them. Each finding records: severity, isolated/widespread, title,
-occurrence list (`file:line`), the evidence its class requires, cross-refs,
-and status (open / open, reopened @hash / resolved @hash /
+occurrence list (`file:line`), the worksheet line (`reach · residue ·
+signal`) the tier was read from, the evidence its class requires,
+cross-refs, and status (open / open, reopened @hash / resolved @hash /
 accepted-by-override).
 
 ## Hygiene — the document must not grow without bound
+
+Two lines that stay lines: a **worksheet** is one line per critical or
+major (`reach · residue · signal → tier`), never a paragraph; a
+**domain-context checklist** entry is one line per invariant, hazard or
+not-exercised operation — verdict plus `file:line` — never a narrative of
+how the verdict was reached. Verifier fact corrections leave no section of
+their own: the corrected worksheet line is the record, marked `(corrected:
+<answer>, <file:line>)`.
 
 - **On resolve, collapse to one archive line**: `ID · severity · title ·
   files · resolved @hash`. Git history keeps the full evidence; the archive

@@ -1,17 +1,17 @@
 {
-  "exported_from": "6e7cf65",
+  "exported_from": "789bd66",
   "exported_on": "2026-09-05",
-  "marketplace_version": "1.0.1",
+  "marketplace_version": "1.0.0",
   "plugins": {
     "aspect-code-review": {
-      "version": "1.0.1",
+      "version": "1.0.0",
       "skills": [
         "reviewing-code-by-aspect",
         "documenting-domain-context"
       ]
     },
     "backend-development": {
-      "version": "1.0.1",
+      "version": "1.0.0",
       "skills": [
         "writing-business-requirements",
         "building-backend-services",

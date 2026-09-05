@@ -30,7 +30,9 @@ every cluster.
 ## The reviewer brief — sweep before reconcile
 
 A reviewer receives, up front: the scout declarations, domain facts, user
-overrides and credited decisions. It receives its own aspects' **open
+overrides, credited decisions, and the domain-context checklist lines
+(invariants, hazards, not-exercised operations) its aspects must answer.
+Every proposed critical or major it returns carries its worksheet line. It receives its own aspects' **open
 findings only after it has returned a fresh sweep** of its scope. Context
 and prior findings are different inputs: declarations make severities
 converge and are always supplied; a list of known findings supplied before
@@ -48,12 +50,16 @@ not covered by its implementation.
 ## Verification
 
 Every critical or major proposed by a reviewer goes to a clean-context
-verifier with the finding and the code, asked to refute it. The verifier's
-mandate (SKILL.md › Scoring, verification gate) is asymmetric — remove only
-what the code proves wrong — and a refutation must attack the finding's own
-failing input, not a precondition owned by another open defect. Inline
-mode substitutes re-derivation: the reviewer rebuilds the failing input
-from the code, not from the finding's prose. Survivors get IDs; the rest are
+verifier with the finding, its worksheet line (`reach · residue · signal`)
+and the code, asked to refute it. The verifier's mandate (SKILL.md ›
+Scoring, verification gate) is asymmetric — remove only what the code
+proves wrong — and a refutation must attack the finding's own failing
+input, not a precondition owned by another open defect. Its answer is
+*refuted*, *kept*, or a *fact correction* naming one worksheet answer and
+the line that contradicts it; **a verifier never proposes a tier**, and the
+orchestrator recomputes the tier from the corrected line. Inline mode
+substitutes re-derivation: the reviewer rebuilds the failing input from
+the code, not from the finding's prose. Survivors get IDs; the rest are
 recorded as candidates, unscored.
 
 **Test-quality candidates are run, not read.** A TSQ major claims a

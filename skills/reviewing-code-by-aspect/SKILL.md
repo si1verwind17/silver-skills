@@ -92,8 +92,15 @@ drops the ceremony and the arithmetic.
    summary — never a question, never a gate: "No owner-confirmed context
    found — assumptions declared from code alone; scale, fee and trust
    severities are calibrated against defaults. `documenting-domain-context`
-   (a short owner Q&A) recalibrates the next review." One pass produces the
-   declarations every aspect consumes:
+   (a short owner Q&A) recalibrates the next review." When the file exists,
+   its invariants (§6) and every module's hazards and not-exercised lines
+   (§7) become a **checklist the review answers line by line** in Declared
+   assumptions — each invariant `held` / `violated at file:line` / `not
+   reachable`, each hazard `credited` (owner accepted) / `filed as <ID>`
+   (owner declined, or unruled and confirmed in code) / `not found`, each
+   not-exercised operation named so reach answers can cite it. A listed
+   line that no cluster adjudicated is a scope gap the summary names. One
+   pass produces the declarations every aspect consumes:
    languages and house pattern per language, auth model, deployment model
    **with the scale the code runs at** (instances, tenants, throughput —
    what MEM/CPU/CON severities are judged against), consumed contract
@@ -121,7 +128,8 @@ drops the ceremony and the arithmetic.
    (interface, config, migration, test) is not covered by reviewing its
    implementation.
 7. **Verify, then merge mechanically.** Every proposed critical or major
-   passes the verification gate below before it gets an ID. Dedup
+   passes the verification gate below before it gets an ID; its tier is
+   read off the severity table from the verified worksheet line. Dedup
    cross-referenced findings (one home aspect, one deduction), compute
    scores by the band table, update the ledger, present the summary. No
    model judgment in this step — that is what makes results reproducible.
@@ -173,20 +181,64 @@ encode how serious that aspect can get.
   level applied and why.
 - **Scores are recomputed from all open findings, old and new** — an
   incremental review still scores the codebase, not the diff.
+- **Severity is derived from three recorded facts, never argued.** Two
+  reviewers who read the same code agree on what a path leaves behind far
+  more often than on what to call it; the tier is therefore a lookup. Every
+  proposed critical or major carries a **worksheet line** — `reach · residue
+  · signal` — and the tier follows from it:
+  - *Reach*: the caller and condition that get to the failing path, judged
+    against the declared deployment model and the domain context's
+    not-exercised list. A path no existing caller can take under that model
+    (a race that needs a second caller the deployment does not have, a
+    branch behind an operation the owner marked not exercised) is **latent
+    → minor**, whatever its residue. Reach asks whether a caller can take
+    the path, never how far the consequence grows: growth bounded only by
+    an external population (users, symbols, days) is unbounded here.
+  - *Residue*: what is left after the path runs — `external` (state outside
+    the process wrong or missing: a store, a ledger, a venue, a queue,
+    money — and data read or altered across a trust boundary, so a
+    disclosure to the wrong principal is external residue), `process` (the
+    service down or wedged), `request` (a wrong or failed response with
+    state intact), or `none` (structure, hygiene).
+  - *Signal*: `none` (the caller is told success, or nothing), `caller` (a
+    typed failure the caller can act on), or `operator` (an alert, or a log
+    line a documented process reads). A log line nobody is shown is `none`.
+
+  | Residue | Signal none | Signal to caller or operator |
+  |---|---|---|
+  | external or process | critical | major |
+  | request | major | major |
+  | none | minor | minor |
+
+  Structural aspects (PAT, RDB, FMT, TST) answer *reach* as **load-bearing**
+  — on a core-path module per the module map, or a guarantee the pattern
+  exists to provide — and keep their ladders: broken guarantee → critical,
+  load-bearing violation → major, local deviation → minor. Where an aspect
+  ladder in `aspects.md` names a tier for a shape, the ladder is read as an
+  instance of this table, never as an exception to it. **Intentionality**
+  (cross-cutting principles) converts a finding only when the evidence
+  decides the *residue*; a comment or handler that improves the *signal*
+  moves the tier one row, it does not credit the finding.
 - **Verification gate — a critical or major enters the score only after an
   independent attempt to refute it.** In fan-out mode a clean-context
-  verifier receives the finding and the code and tries to refute it; inline,
+  verifier receives the finding, its worksheet line and the code; inline,
   the reviewer re-derives the failing input from the code rather than from
-  the finding's text. The verifier's mandate is asymmetric: **it removes
-  only what the code proves wrong.** Doubt, distaste, low perceived value,
-  or an inability to reproduce are not refutations — the finding stays.
-  The asymmetry is deliberate: a wrongly kept finding costs a reader
-  seconds; a wrongly dropped one vanishes and nobody learns it existed.
-  A refutation must attack the finding's own failing input; a defect masked
-  only by another open defect (a retry that cannot double-charge today
-  because nothing is ever captured) keeps its tier and records the
-  dependency. What fails or skips the gate is recorded in its aspect
-  section as a *candidate*: no ID, not in the score.
+  the finding's text. The verifier returns one of three things: **refuted**
+  (the code proves the failing input cannot occur), **kept**, or a
+  **fact correction** — one worksheet answer with the line that contradicts
+  it ("signal: operator — Discord alert at x.scala:498"). **It never assigns
+  a tier**; the orchestrator recomputes the tier from the corrected line
+  and marks it `(corrected: …)` — no separate corrections log.
+  The mandate is asymmetric: **it removes only what the code proves
+  wrong.** Doubt, distaste, low perceived value, or an inability to
+  reproduce are not refutations — the finding stays. The asymmetry is
+  deliberate: a wrongly kept finding costs a reader seconds; a wrongly
+  dropped one vanishes and nobody learns it existed. A refutation must
+  attack the finding's own failing input; a defect masked only by another
+  open defect (a retry that cannot double-charge today because nothing is
+  ever captured) keeps its tier and records the dependency. What fails or
+  skips the gate is recorded in its aspect section as a *candidate*: no ID,
+  not in the score.
 - The scale stays 10. A 100-scale adds no resolution (the measurement is
   band + count) and invites chasing phantom 3-point differences.
 
