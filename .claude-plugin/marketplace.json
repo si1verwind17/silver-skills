@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Skills for scored code review and backend service development, written as plain Markdown any agent can follow.",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   "plugins": [
     {
@@ -13,7 +13,7 @@
       "source": "./",
       "strict": false,
       "description": "Scored, documented code review by aspect with a persistent ledger, plus the owner-confirmed domain-context document the review reads first.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "si1verwind"
       },
@@ -36,7 +36,7 @@
       "source": "./",
       "strict": false,
       "description": "Requirements to implementation for backend services: business requirements, data design, architecture, stack selection, code conventions, and a human-readable design-review page, orchestrated end to end.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "si1verwind"
       },

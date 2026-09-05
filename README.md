@@ -2,8 +2,8 @@
 
 Agent skills for scored code review and for building backend services from
 requirements. Each skill is a plain-Markdown `SKILL.md` in the open Agent
-Skills format, usable from Claude Code, GitHub Copilot, Gemini CLI, Cursor,
-Codex and any other host that reads it.
+Skills format, usable from Claude Code, GitHub Copilot, Antigravity CLI,
+Cursor, Codex and any other host that reads it.
 
 What these skills add, compared with asking an agent without them:
 
@@ -42,15 +42,14 @@ shared `.agents/skills/` directory of the current repo; see `gh skill install
 gh skill install si1verwind17/silver-skills
 ```
 
-**Gemini CLI**:
-
-```
-gemini skills install https://github.com/si1verwind17/silver-skills.git
-```
+**Antigravity CLI (`agy`, the successor of Gemini CLI)** — reads the same
+`.agents/skills/` directory, so the `gh skill install` line above installs for
+it too. For a user-wide install, copy the `skills/<name>/` directories into
+`~/.antigravity/skills/`. `/skills` inside `agy` lists what it loaded.
 
 **Anything else** — copy the `skills/<name>/` directories you want into your
 agent's skills directory (`.agents/skills/`, `.claude/skills/`, `.github/skills/`,
-`.gemini/skills/`, `.codex/skills/`, or the user-level equivalent).
+`.codex/skills/`, or the user-level equivalent).
 
 After installing, you ask in plain words and the agent picks the matching
 skill from its description; the "Try" prompts under each plugin show what to
